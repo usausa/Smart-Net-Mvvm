@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>ObservablePropertyGenerator.Attributes</PackageId>
+    <PackageId>BunnyTail.ObservablePropertyGenerator.Attributes</PackageId>
     <Title>ObservablePropertyGenerator.Attributes</Title>
     <Description>ObservableProperty source generator attributes.</Description>
     <PackageTags>sourcegenerator</PackageTags>
