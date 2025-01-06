@@ -14,7 +14,7 @@
   </PropertyGroup>
   -->
 
-  <Import Project="..\ObservablePropertyGenerator\build\ObservablePropertyGenerator.props" />
+  <Import Project="..\ObservablePropertyGenerator\build\BunnyTail.ObservablePropertyGenerator.props" />
 
   <ItemGroup>
     <ProjectReference Include="..\ObservablePropertyGenerator.Attributes\ObservablePropertyGenerator.Attributes.csproj" />
