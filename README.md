@@ -1,1 +1,1 @@
-# source-generator-notification
+# observable-property-generator
