@@ -1,14 +1,14 @@
-namespace ObservablePropertyGenerator.Attributes;
+namespace BunnyTail.ObservableProperty;
 
 using System;
 
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class NotifyPropertyChangedForAttribute : Attribute
+public sealed class NotifyAlsoAttribute : Attribute
 {
     public string[] PropertyNames { get; }
 
 #pragma warning disable CA1019
-    public NotifyPropertyChangedForAttribute(string propertyName, params string[] otherPropertyNames)
+    public NotifyAlsoAttribute(string propertyName, params string[] otherPropertyNames)
     {
         PropertyNames = new[] { propertyName }.Concat(otherPropertyNames).ToArray();
     }

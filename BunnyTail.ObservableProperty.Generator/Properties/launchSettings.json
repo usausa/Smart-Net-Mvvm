@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BunnyTail.ObservableProperty.Generator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Develop\\Develop.csproj"
+    }
+  }
+}

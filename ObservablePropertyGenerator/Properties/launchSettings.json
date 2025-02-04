@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "ObservablePropertyGenerator": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\ObservablePropertyGenerator.Example\\ObservablePropertyGenerator.Example.csproj"
-    }
-  }
-}

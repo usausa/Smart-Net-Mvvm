@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <CodeAnalysisRuleSet>..\Analyzers.ruleset</CodeAnalysisRuleSet>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TemplateLibraryGeneratorValue>test</TemplateLibraryGeneratorValue>
+  </PropertyGroup>
+
+  <Import Project="..\BunnyTail.ObservableProperty.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\BunnyTail.ObservableProperty.Generator\BunnyTail.ObservableProperty.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\BunnyTail.ObservableProperty\BunnyTail.ObservableProperty.csproj" />
+  </ItemGroup>
+
+</Project>

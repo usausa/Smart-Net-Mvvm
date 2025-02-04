@@ -4,14 +4,25 @@
     <TargetFramework>net9.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <CodeAnalysisRuleSet>..\Analyzers.ruleset</CodeAnalysisRuleSet>
+    <RootNamespace>BunnyTail.ObservableProperty</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TemplateLibraryGeneratorValue>test</TemplateLibraryGeneratorValue>
+  </PropertyGroup>
+
+  <Import Project="..\BunnyTail.ObservableProperty.props" />
+
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.3">
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -21,8 +32,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ObservablePropertyGenerator.Attributes\ObservablePropertyGenerator.Attributes.csproj" />
-    <ProjectReference Include="..\ObservablePropertyGenerator\ObservablePropertyGenerator.csproj" />
+    <ProjectReference Include="..\BunnyTail.ObservableProperty.Generator\BunnyTail.ObservableProperty.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\BunnyTail.ObservableProperty\BunnyTail.ObservableProperty.csproj" />
   </ItemGroup>
 
 </Project>

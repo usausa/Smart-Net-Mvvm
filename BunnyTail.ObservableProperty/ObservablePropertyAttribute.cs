@@ -1,4 +1,4 @@
-namespace ObservablePropertyGenerator.Attributes;
+namespace BunnyTail.ObservableProperty;
 
 using System;
 
