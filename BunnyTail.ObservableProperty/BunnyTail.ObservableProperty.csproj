@@ -22,7 +22,7 @@
   <PropertyGroup>
     <PackageId>BunnyTail.ObservableProperty</PackageId>
     <Title>BunnyTail.ObservableProperty</Title>
-    <Description>Template source generator.</Description>
+    <Description>Observable property source generator.</Description>
     <PackageTags>sourcegenerator</PackageTags>
   </PropertyGroup>
 
