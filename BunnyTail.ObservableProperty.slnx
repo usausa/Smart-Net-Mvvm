@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Analyzers.ruleset" />
+    <File Path="BunnyTail.ObservableProperty.props" />
+    <File Path="BunnyTail.ObservableProperty.sln.DotSettings" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="test.runsettings" />
+  </Folder>
+  <Project Path="BunnyTail.ObservableProperty/BunnyTail.ObservableProperty.csproj" />
+  <Project Path="BunnyTail.ObservableProperty.Generator/BunnyTail.ObservableProperty.Generator.csproj" />
+  <Project Path="BunnyTail.ObservableProperty.Tests/BunnyTail.ObservableProperty.Tests.csproj" />
+  <Project Path="Develop/Develop.csproj" />
+</Solution>
