@@ -24,17 +24,22 @@ internal static class Program
 internal abstract class ViewModelBase : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void RaisePropertyChanged(PropertyChangedEventArgs args)
+    {
+        PropertyChanged?.Invoke(this, args);
+    }
 }
 
-internal partial class ViewModel : ViewModelBase
+internal sealed partial class ViewModel : ViewModelBase
 {
     [ObservableProperty]
-    [NotifyAlso(nameof(FirstName))]
-    public partial string FirstName { get; set; }
+    [NotifyAlso(nameof(FullName))]
+    public partial string FirstName { get; set; } = default!;
 
     [ObservableProperty]
-    [NotifyAlso(nameof(FirstName))]
-    public partial string LastName { get; set; }
+    [NotifyAlso(nameof(FullName))]
+    public partial string LastName { get; set; } = default!;
 
     public string FullName => $"{FirstName} {LastName}";
 }

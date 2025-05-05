@@ -12,9 +12,17 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor InvalidTypeDefinition => new(
+    public static DiagnosticDescriptor PropertySetterRequired => new(
         id: "BTOP0002",
-        title: "Invalid type definition",
+        title: "Property setter required",
+        messageFormat: "Property setter is required. property=[{0}]",
+        category: "Usage",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static DiagnosticDescriptor InvalidTypeDefinition => new(
+        id: "BTOP0003",
+        title: "Invalid type implement",
         messageFormat: "Type must implement INotifyPropertyChanged. type=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Warning,

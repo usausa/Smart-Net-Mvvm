@@ -31,6 +31,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // TODO option raise method name, type
+
         var propertyProvider = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 AttributeName,
@@ -64,6 +66,11 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name));
         }
 
+        if (symbol.SetMethod is null)
+        {
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name));
+        }
+
         // Validate type definition
         var containingType = symbol.ContainingType;
         if (!IsImplementNotifyPropertyChanged(containingType))
@@ -76,6 +83,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             : containingType.ContainingNamespace.ToDisplayString();
         var hasPropertyChangedEvent = HasPropertyChangedEvent(containingType);
         var notifyAlso = GetNotifyAlsoPropertyNames(symbol);
+        var getterAccessibility = GetMethodAccessibility(symbol.GetMethod, symbol.DeclaredAccessibility);
+        var setterAccessibility = GetMethodAccessibility(symbol.SetMethod, symbol.DeclaredAccessibility);
 
         return Results.Success(new PropertyModel(
             ns,
@@ -85,6 +94,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             symbol.DeclaredAccessibility,
             symbol.Type.ToDisplayString(),
             symbol.Name,
+            symbol.GetMethod is not null,
+            getterAccessibility,
+            setterAccessibility,
             new EquatableArray<string>(notifyAlso.ToArray())));
     }
 
@@ -156,6 +168,11 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         return notifyAlso.ToArray();
     }
 
+    private static Accessibility? GetMethodAccessibility(IMethodSymbol? symbol, Accessibility defaultAccessibility)
+    {
+        return ((symbol is not null) && (symbol.DeclaredAccessibility != defaultAccessibility)) ? symbol.DeclaredAccessibility : null;
+    }
+
     // ------------------------------------------------------------
     // Generator
     // ------------------------------------------------------------
@@ -207,20 +224,34 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             .NewLine();
         builder.BeginScope();
 
-        var first = true;
+        // event args
+        var names = properties
+            .Select(static x => x.PropertyName)
+            .Concat(properties.SelectMany(static x => x.NotifyAlso.ToArray()))
+            .Distinct()
+            .OrderBy(static x => x);
+        foreach (var name in names)
+        {
+            // TODO
+            builder
+                .Indent()
+                .Append("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]")
+                .NewLine();
+            builder
+                .Indent()
+                .Append("private static readonly global::System.ComponentModel.PropertyChangedEventArgs ")
+                .Append(GetEventArgsPropertyName(name))
+                .Append(" = new(\"")
+                .Append(name)
+                .Append("\");")
+                .NewLine();
+        }
+
         foreach (var property in properties)
         {
-            if (first)
-            {
-                first = false;
-            }
-            else
-            {
-                builder.NewLine();
-            }
+            builder.NewLine();
 
             // property
-            // TODO
             builder
                 .Indent()
                 .Append(property.PropertyAccessibility.ToText())
@@ -232,21 +263,48 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             builder.BeginScope();
 
             // getter
-            builder
-                .Indent()
-                .Append("get => field;")
-                .NewLine();
+            if (property.HasGetter)
+            {
+                builder.Indent();
+                if (property.GetterAccessibility is not null)
+                {
+                    builder.Append(property.GetterAccessibility.Value.ToText()).Append(" ");
+                }
+                builder
+                    .Append("get => field;")
+                    .NewLine();
+            }
+
             // setter
+            builder.Indent();
+            if (property.SetterAccessibility is not null)
+            {
+                builder.Append(property.SetterAccessibility.Value.ToText()).Append(" ");
+            }
             builder
-                .Indent()
                 .Append("set")
                 .NewLine();
             builder.BeginScope();
-            // TODO
+            builder
+                .Indent()
+                .Append("if (!Equals(field, value))")
+                .NewLine();
+            builder.BeginScope();
             builder
                 .Indent()
                 .Append("field = value;")
                 .NewLine();
+            foreach (var name in new[] { property.PropertyName }.Concat(property.NotifyAlso.ToArray()).Distinct())
+            {
+                // TODO 通知方式
+                builder
+                    .Indent()
+                    .Append("RaisePropertyChanged(")
+                    .Append(GetEventArgsPropertyName(name))
+                    .Append(");")
+                    .NewLine();
+            }
+            builder.EndScope();
             builder.EndScope();
 
             builder.EndScope();
@@ -258,6 +316,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     // ------------------------------------------------------------
     // Helper
     // ------------------------------------------------------------
+
+    private static string GetEventArgsPropertyName(string name) =>
+        $"__{name}ChangedEventArgs";
 
     private static string MakeFilename(string ns, string className)
     {
