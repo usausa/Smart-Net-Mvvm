@@ -1,4 +1,6 @@
+// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable StringLiteralTypo
+#pragma warning disable CA1812
 namespace Develop;
 
 using System.ComponentModel;
@@ -25,13 +27,13 @@ internal abstract class ViewModelBase : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void RaisePropertyChanged(PropertyChangedEventArgs args)
+    protected void RaisePropertyChanged(PropertyChangedEventArgs args)
     {
         PropertyChanged?.Invoke(this, args);
     }
 }
 
-internal sealed partial class ViewModel : ViewModelBase
+internal sealed partial class ViewModel : INotifyPropertyChanged
 {
     [ObservableProperty]
     [NotifyAlso(nameof(FullName))]
@@ -41,5 +43,19 @@ internal sealed partial class ViewModel : ViewModelBase
     [NotifyAlso(nameof(FullName))]
     public partial string LastName { get; set; } = default!;
 
+    [ObservableProperty]
+    public partial int Age { get; set; }
+
+    [ObservableProperty]
+    public partial int? Value { get; set; }
+
+    [ObservableProperty]
+    public partial Data? Data { get; set; }
+
     public string FullName => $"{FirstName} {LastName}";
+}
+
+internal sealed class Data
+{
+    public int Value { get; set; }
 }

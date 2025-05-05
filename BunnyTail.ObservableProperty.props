@@ -1,7 +1,11 @@
 <Project>
 
   <ItemGroup>
-    <CompilerVisibleProperty Include="TemplateLibraryGeneratorValue" />
+    <CompilerVisibleProperty Include="ObservablePropertyTriggerMethodNames" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <ObservablePropertyTriggerMethodNames>OnPropertyChanged,RaisePropertyChanged,FirePropertyChanged,InvokePropertyChanged</ObservablePropertyTriggerMethodNames>
+  </PropertyGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,11 +12,13 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TemplateLibraryGeneratorValue>test</TemplateLibraryGeneratorValue>
-  </PropertyGroup>
-
   <Import Project="..\BunnyTail.ObservableProperty.props" />
+
+  <!--
+  <PropertyGroup>
+    <ObservablePropertyTriggerMethodNames>$(ObservablePropertyTriggerMethodNames)</ObservablePropertyTriggerMethodNames>
+  </PropertyGroup>
+  -->
 
   <ItemGroup>
     <ProjectReference Include="..\BunnyTail.ObservableProperty.Generator\BunnyTail.ObservableProperty.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
