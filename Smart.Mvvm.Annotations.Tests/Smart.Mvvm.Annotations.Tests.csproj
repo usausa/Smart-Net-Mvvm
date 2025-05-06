@@ -33,6 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Smart.Mvvm.Annotations.Generator\Smart.Mvvm.Annotations.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Smart.Mvvm.Annotations\Smart.Mvvm.Annotations.csproj" />
+    <ProjectReference Include="..\Smart.Mvvm\Smart.Mvvm.csproj" />
   </ItemGroup>
 
 </Project>

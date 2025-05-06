@@ -2,7 +2,7 @@
   "profiles": {
     "Smart.Mvvm.Annotations.Generator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Develop\\Develop.csproj"
+      "targetProject": "..\\Smart.Mvvm.Annotations.Tests\\Smart.Mvvm.Annotations.Tests.csproj"
     }
   }
 }

@@ -1,25 +1,5 @@
-// ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable StringLiteralTypo
-#pragma warning disable CA1812
-namespace Develop;
-
-using Smart.Mvvm;
-
-internal static class Program
-{
-    public static void Main()
-    {
-        var vm = new ViewModel();
-
-        var called = new HashSet<string>();
-        vm.PropertyChanged += (_, args) => called.Add(args.PropertyName!);
-
-        vm.FirstName = "Byleth";
-        vm.LastName = "Eisner";
-
-        Console.WriteLine(called.Count);
-    }
-}
+namespace Smart.Mvvm.Annotations;
 
 internal sealed partial class ViewModel : ObservableObject
 {

@@ -17,7 +17,6 @@
     <File Path="README.md" />
     <File Path="test.runsettings" />
   </Folder>
-  <Project Path="Develop/Develop.csproj" />
   <Project Path="Smart.Mvvm.Annotations.Generator/Smart.Mvvm.Annotations.Generator.csproj" />
   <Project Path="Smart.Mvvm.Annotations.Tests/Smart.Mvvm.Annotations.Tests.csproj" />
   <Project Path="Smart.Mvvm.Annotations/Smart.Mvvm.Annotations.csproj" />
