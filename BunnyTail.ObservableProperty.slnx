@@ -1,4 +1,15 @@
 <Solution>
+  <Folder Name="/Old/" Id="4b121170-037e-41f7-8118-a5bcf67105ef">
+    <Project Path="BunnyTail.ObservableProperty.Generator/BunnyTail.ObservableProperty.Generator.csproj" />
+    <Project Path="BunnyTail.ObservableProperty.Tests/BunnyTail.ObservableProperty.Tests.csproj" />
+    <Project Path="BunnyTail.ObservableProperty/BunnyTail.ObservableProperty.csproj" />
+    <Project Path="Develop/Develop.csproj" />
+  </Folder>
+  <Folder Name="/Ref/" Id="ddb4ef12-cc4e-5e88-e6fc-71a802f4de97">
+    <Project Path="Smart.Windows.Behaviors/Smart.Windows.Behaviors.csproj" />
+    <Project Path="Smart.Windows.Reactive/Smart.Windows.Reactive.csproj" />
+    <Project Path="Smart.Windows/Smart.Windows.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
@@ -12,9 +23,7 @@
     <File Path="README.md" />
     <File Path="test.runsettings" />
   </Folder>
-  <Project Path="BunnyTail.ObservableProperty/BunnyTail.ObservableProperty.csproj" />
-  <Project Path="BunnyTail.ObservableProperty.Generator/BunnyTail.ObservableProperty.Generator.csproj" />
-  <Project Path="BunnyTail.ObservableProperty.Tests/BunnyTail.ObservableProperty.Tests.csproj" />
-  <Project Path="Develop/Develop.csproj" />
-  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" Id="4499daa7-7c5b-4fa2-910a-a5f38f13f2c9" />
+  <Project Path="Smart.Mvvm.Annotations/Smart.Mvvm.Annotations.csproj" />
+  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" />
+  <Project Path="Smart.Windows.Extensions/Smart.Windows.Extensions.csproj" Id="0883eb9a-8fef-4b28-82c7-ce2e778fd018" />
 </Solution>
