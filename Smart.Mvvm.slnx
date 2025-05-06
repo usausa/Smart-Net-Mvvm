@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/Ref/">
-    <Project Path="Smart.Windows.Behaviors/Smart.Windows.Behaviors.csproj" />
-    <Project Path="Smart.Windows.Extensions/Smart.Windows.Extensions.csproj" />
-    <Project Path="Smart.Windows/Smart.Windows.csproj" />
-  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
