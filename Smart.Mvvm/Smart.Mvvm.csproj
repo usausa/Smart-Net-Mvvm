@@ -21,10 +21,10 @@
   </Target>
 
   <PropertyGroup>
-    <PackageId>Smart.Mvvm.Annotations</PackageId>
-    <Title>Smart.Mvvm.Annotations</Title>
-    <Description>Observable property source generator.</Description>
-    <PackageTags>sourcegenerator</PackageTags>
+    <PackageId>Usa.Smart.Mvvm</PackageId>
+    <Title>Smart.Mvvm</Title>
+    <Description>Smart navigation library</Description>
+    <PackageTags>smart mvvm</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
