@@ -5,7 +5,7 @@ using System.Windows.Controls;
 
 using Microsoft.Xaml.Behaviors;
 
-using Smart.Windows.Messaging;
+using Smart.Mvvm.Messaging;
 
 [TypeConstraint(typeof(DependencyObject))]
 public sealed class ValidationErrorFocusAction : TriggerAction<DependencyObject>

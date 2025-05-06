@@ -1,4 +1,4 @@
-namespace Smart.Windows.Messaging;
+namespace Smart.Mvvm.Messaging;
 
 using System.ComponentModel;
 

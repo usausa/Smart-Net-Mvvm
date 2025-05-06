@@ -1,7 +1,5 @@
 namespace Smart.Windows.Expressions;
 
-using Smart.Windows.Internal;
-
 public static class BinaryExpressions
 {
     public static IBinaryExpression Max { get; } = new MaxExpression();

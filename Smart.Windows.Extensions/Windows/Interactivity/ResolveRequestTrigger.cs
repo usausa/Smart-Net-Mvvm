@@ -1,6 +1,6 @@
 namespace Smart.Windows.Interactivity;
 
-using Smart.Windows.Messaging;
+using Smart.Mvvm.Messaging;
 
 public sealed class ResolveRequestTrigger : RequestTriggerBase<ResolveEventArgs>
 {

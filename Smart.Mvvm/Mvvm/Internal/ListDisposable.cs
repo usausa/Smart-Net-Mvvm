@@ -1,4 +1,4 @@
-namespace Smart.Windows.Internal;
+namespace Smart.Mvvm.Internal;
 
 using System.Collections;
 

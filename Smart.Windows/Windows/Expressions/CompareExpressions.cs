@@ -1,7 +1,5 @@
 namespace Smart.Windows.Expressions;
 
-using Smart.Windows.Internal;
-
 public static class CompareExpressions
 {
     public static ICompareExpression Equal { get; } = new EqualExpression();

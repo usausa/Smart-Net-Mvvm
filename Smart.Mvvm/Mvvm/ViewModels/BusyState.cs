@@ -1,9 +1,11 @@
-namespace Smart.Windows.ViewModels;
+namespace Smart.Mvvm.ViewModels;
 
-using Smart.ComponentModel;
+using System.ComponentModel;
 
-public class BusyState : NotificationObject, IBusyState
+public class BusyState : ObservableObject, IBusyState
 {
+    private static readonly PropertyChangedEventArgs IsBusyChangedEventArgs = new(nameof(IsBusy));
+
     private int counter;
 
     public bool IsBusy => counter > 0;
@@ -14,7 +16,7 @@ public class BusyState : NotificationObject, IBusyState
         counter++;
         if (current != IsBusy)
         {
-            RaisePropertyChanged(nameof(IsBusy));
+            RaisePropertyChanged(IsBusyChangedEventArgs);
         }
     }
 
@@ -24,7 +26,7 @@ public class BusyState : NotificationObject, IBusyState
         counter--;
         if (current != IsBusy)
         {
-            RaisePropertyChanged(nameof(IsBusy));
+            RaisePropertyChanged(IsBusyChangedEventArgs);
         }
     }
 
@@ -34,7 +36,7 @@ public class BusyState : NotificationObject, IBusyState
         counter = 0;
         if (current != IsBusy)
         {
-            RaisePropertyChanged(nameof(IsBusy));
+            RaisePropertyChanged(IsBusyChangedEventArgs);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Windows;
 
 using Microsoft.Xaml.Behaviors;
 
-using Smart.Windows.Messaging;
+using Smart.Mvvm.Messaging;
 
 [TypeConstraint(typeof(FrameworkElement))]
 public sealed class MessageTrigger : TriggerBase<FrameworkElement>
