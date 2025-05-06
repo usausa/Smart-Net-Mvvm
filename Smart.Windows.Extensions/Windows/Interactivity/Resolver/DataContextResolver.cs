@@ -1,7 +1,9 @@
-namespace Smart.Windows.Resolver;
+namespace Smart.Windows.Interactivity.Resolver;
 
 using System.ComponentModel;
 using System.Windows;
+
+using Smart.Mvvm.Resolver;
 
 public static class DataContextResolver
 {

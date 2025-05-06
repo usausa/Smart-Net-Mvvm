@@ -1,4 +1,4 @@
-namespace Smart.Windows.Resolver;
+namespace Smart.Mvvm.Resolver;
 
 public sealed class DefaultResolveProvider : IServiceProvider
 {

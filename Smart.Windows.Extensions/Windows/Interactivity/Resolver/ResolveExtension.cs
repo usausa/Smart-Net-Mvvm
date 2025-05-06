@@ -1,6 +1,8 @@
-namespace Smart.Windows.Resolver;
+namespace Smart.Windows.Interactivity.Resolver;
 
 using System.Windows.Markup;
+
+using Smart.Mvvm.Resolver;
 
 public sealed class ResolveExtension : MarkupExtension
 {
