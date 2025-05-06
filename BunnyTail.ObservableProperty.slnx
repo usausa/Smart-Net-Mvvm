@@ -16,4 +16,5 @@
   <Project Path="BunnyTail.ObservableProperty.Generator/BunnyTail.ObservableProperty.Generator.csproj" />
   <Project Path="BunnyTail.ObservableProperty.Tests/BunnyTail.ObservableProperty.Tests.csproj" />
   <Project Path="Develop/Develop.csproj" />
+  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" Id="4499daa7-7c5b-4fa2-910a-a5f38f13f2c9" />
 </Solution>

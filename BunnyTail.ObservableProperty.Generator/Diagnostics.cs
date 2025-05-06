@@ -20,18 +20,18 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor InvalidTypeDefinition => new(
+    public static DiagnosticDescriptor TypeMustImplementNotifyPropertyChanged => new(
         id: "BTOP0003",
-        title: "Invalid type implement",
+        title: "Type must implement INotifyPropertyChanged",
         messageFormat: "Type must implement INotifyPropertyChanged. type=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor TriggerMethodNotFound => new(
+    public static DiagnosticDescriptor TypeMustImplementObservableObject => new(
         id: "BTOP0004",
-        title: "Trigger method not found",
-        messageFormat: "Trigger method not found. type=[{0}]",
+        title: "Type must implement IObservableObject",
+        messageFormat: "Type must implement IObservableObject. type=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

@@ -8,7 +8,6 @@ using BunnyTail.ObservableProperty.Generator.Models;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using SourceGenerateHelper;
@@ -20,15 +19,10 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
     private const string NotifyAlsoAttributeName = "BunnyTail.ObservableProperty.NotifyAlsoAttribute";
 
+    private const string ObservableObjectName = "BunnyTail.ObservableProperty.IObservableObject";
+    private const string ObservableObjectMethodName = "RaisePropertyChanged";
+
     private const string NotifyPropertyChangedName = "System.ComponentModel.INotifyPropertyChanged";
-
-    private const string PropertyChangedEventName = "PropertyChanged";
-    private const string PropertyChangedEventHandlerName = "System.ComponentModel.PropertyChangedEventHandler";
-    private const string PropertyChangedEventHandlerNullableName = "System.ComponentModel.PropertyChangedEventHandler?";
-
-    private const string DefaultRaiseMethodName = "RaisePropertyChanged";
-
-    private const string TriggerMethodNamesOption = "ObservablePropertyTriggerMethodNames";
 
     // ------------------------------------------------------------
     // Initialize
@@ -37,10 +31,11 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var propertyProvider = context
-            .ForAttributeWithMetadataNameWithOptions(
+            .SyntaxProvider
+            .ForAttributeWithMetadataName(
                 AttributeName,
                 static (syntax, _) => IsPropertySyntax(syntax),
-                static (context, options, _) => GetPropertyModel(context, options))
+                static (context, _) => GetPropertyModel(context))
             .Collect();
 
         context.RegisterImplementationSourceOutput(
@@ -55,7 +50,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     private static bool IsPropertySyntax(SyntaxNode syntax) =>
         syntax is PropertyDeclarationSyntax;
 
-    private static Result<PropertyModel> GetPropertyModel(GeneratorAttributeSyntaxContext context, AnalyzerConfigOptions options)
+    private static Result<PropertyModel> GetPropertyModel(GeneratorAttributeSyntaxContext context)
     {
         var syntax = (PropertyDeclarationSyntax)context.TargetNode;
         if (context.SemanticModel.GetDeclaredSymbol(syntax) is not IPropertySymbol symbol)
@@ -75,18 +70,19 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
 
         // Validate type definition
+        // TODO
         var containingType = symbol.ContainingType;
         if (!IsImplementNotifyPropertyChanged(containingType))
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name));
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.TypeMustImplementNotifyPropertyChanged, syntax.GetLocation(), containingType.Name));
         }
 
-        // Find trigger method
-        var triggerMethod = FindTriggerMethod(containingType, options.GetValue<string>(TriggerMethodNamesOption));
-        if (!triggerMethod.Find)
-        {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.TriggerMethodNotFound, syntax.GetLocation(), containingType.Name));
-        }
+        //// Find trigger method
+        //var triggerMethod = FindTriggerMethod(containingType, options.GetValue<string>(TriggerMethodNamesOption));
+        //if (!triggerMethod.Find)
+        //{
+        //    return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.TriggerMethodNotFound, syntax.GetLocation(), containingType.Name));
+        //}
 
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
             ? string.Empty
@@ -99,9 +95,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             ns,
             containingType.GetClassName(),
             containingType.IsValueType,
-            triggerMethod.ImplementType,
-            triggerMethod.MethodType,
-            triggerMethod.MethodName,
+            true, // TODO
+            true, // TODO
             symbol.DeclaredAccessibility,
             symbol.Type.ToDisplayString(),
             symbol.Name,
@@ -124,52 +119,52 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static (bool Find, ImplementType ImplementType, MethodType MethodType, string MethodName) FindTriggerMethod(INamedTypeSymbol typeSymbol, string methods)
-    {
-        var implementType = FindEventImplementType(typeSymbol);
-        if (implementType is null)
-        {
-            return (true, ImplementType.None, MethodType.ByEventArgs, DefaultRaiseMethodName);
-        }
+    //private static (bool Find, ImplementType ImplementType, MethodType MethodType, string MethodName) FindTriggerMethod(INamedTypeSymbol typeSymbol, string methods)
+    //{
+    //    var implementType = FindEventImplementType(typeSymbol);
+    //    if (implementType is null)
+    //    {
+    //        return (true, ImplementType.None, MethodType.ByEventArgs, DefaultRaiseMethodName);
+    //    }
 
-        if (SymbolEqualityComparer.Default.Equals(typeSymbol, implementType))
-        {
-            // TODO 対象メソッドのライズメソッドを検索
-            // ある EventTrigger ＆ その名前
-            // なし Event、デフォルト名
+    //    if (SymbolEqualityComparer.Default.Equals(typeSymbol, implementType))
+    //    {
+    //        // TODO 対象メソッドのライズメソッドを検索
+    //        // ある EventTrigger ＆ その名前
+    //        // なし Event、デフォルト名
 
-            return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
-        }
+    //        return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
+    //    }
 
-        // TODO 対象メソッドのライズメソッドを検索
-        // ある EventTrigger ＆ その名前
-        // なし エラー
-        return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
-    }
+    //    // TODO 対象メソッドのライズメソッドを検索
+    //    // ある EventTrigger ＆ その名前
+    //    // なし エラー
+    //    return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
+    //}
 
-    private static INamedTypeSymbol? FindEventImplementType(INamedTypeSymbol typeSymbol)
-    {
-        var symbol = typeSymbol;
-        while (symbol is not null)
-        {
-            foreach (var member in symbol.GetMembers(PropertyChangedEventName))
-            {
-                if (member is IEventSymbol eventSymbol)
-                {
-                    var eventType = eventSymbol.Type.ToDisplayString();
-                    if ((eventType == PropertyChangedEventHandlerName) ||
-                        (eventType == PropertyChangedEventHandlerNullableName))
-                    {
-                        return symbol;
-                    }
-                }
-            }
+    //private static INamedTypeSymbol? FindEventImplementType(INamedTypeSymbol typeSymbol)
+    //{
+    //    var symbol = typeSymbol;
+    //    while (symbol is not null)
+    //    {
+    //        foreach (var member in symbol.GetMembers(PropertyChangedEventName))
+    //        {
+    //            if (member is IEventSymbol eventSymbol)
+    //            {
+    //                var eventType = eventSymbol.Type.ToDisplayString();
+    //                if ((eventType == PropertyChangedEventHandlerName) ||
+    //                    (eventType == PropertyChangedEventHandlerNullableName))
+    //                {
+    //                    return symbol;
+    //                }
+    //            }
+    //        }
 
-            symbol = symbol.BaseType;
-        }
+    //        symbol = symbol.BaseType;
+    //    }
 
-        return null;
-    }
+    //    return null;
+    //}
 
     private static string[] GetNotifyAlsoPropertyNames(IPropertySymbol typeSymbol)
     {
@@ -237,9 +232,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var ns = properties[0].Namespace;
         var className = properties[0].ClassName;
         var isValueType = properties[0].IsValueType;
-        var implementType = properties[0].ImplementType;
-        var methodType = properties[0].MethodType;
-        var methodName = properties[0].MethodName;
+        var implementEvent = properties[0].ImplementEvent;
+        var implementTrigger = properties[0].ImplementTrigger;
 
         builder.AutoGenerated();
         builder.EnableNullable();
@@ -258,6 +252,10 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             .Append("partial ")
             .Append(isValueType ? "struct " : "class ")
             .Append(className)
+            .Append(" : global::")
+            .Append(NotifyPropertyChangedName)
+            .Append(", global::")
+            .Append(ObservableObjectName)
             .NewLine();
         builder.BeginScope();
 
@@ -283,7 +281,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 .NewLine();
         }
 
-        if (!implementType.HasEvent())
+        if (implementEvent)
         {
             builder
                 .Indent()
@@ -292,7 +290,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             builder.NewLine();
         }
 
-        if (!implementType.HasTrigger())
+        if (implementTrigger)
         {
             builder
                 .Indent()
@@ -300,8 +298,10 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 .NewLine();
             builder
                 .Indent()
-                .Append("private void ")
-                .Append(methodName)
+                .Append("void global::")
+                .Append(ObservableObjectName)
+                .Append(".")
+                .Append(ObservableObjectMethodName)
                 .Append("(global::System.ComponentModel.PropertyChangedEventArgs args)")
                 .NewLine();
             builder.BeginScope();
@@ -365,22 +365,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             {
                 builder
                     .Indent()
-                    .Append(methodName)
-                    .Append('(');
-                if (methodType is MethodType.ByEventArgsWithSender or MethodType.ByNameWithSender)
-                {
-                    builder.Append("this, ");
-                }
-                if (methodType is MethodType.ByName or MethodType.ByNameWithSender)
-                {
-                    builder.Append("\"").Append(name).Append("\"");
-                }
-                else
-                {
-                    builder
-                        .Append(GetEventArgsPropertyName(name));
-                }
-                builder
+                    .Append(ObservableObjectMethodName)
+                    .Append('(')
+                    .Append(GetEventArgsPropertyName(name))
                     .Append(");")
                     .NewLine();
             }

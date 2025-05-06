@@ -59,3 +59,24 @@ internal sealed class Data
 {
     public int Value { get; set; }
 }
+
+public class Test : IObservableObject
+{
+    void IObservableObject.RaisePropertyChanged(global::System.ComponentModel.PropertyChangedEventArgs args)
+    {
+    }
+
+    public string FirstName
+    {
+        get => field;
+        set
+        {
+            if (!global::System.Collections.Generic.EqualityComparer<string>.Default.Equals(field, value))
+            {
+                field = value;
+                var obj = (IObservableObject)this;
+                obj.RaisePropertyChanged(new PropertyChangedEventArgs(""));
+            }
+        }
+    } = default!;
+}
