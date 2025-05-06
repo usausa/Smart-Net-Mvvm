@@ -1,4 +1,4 @@
-namespace Smart.Windows.Input;
+namespace Smart.Windows;
 
 using System.Windows.Input;
 

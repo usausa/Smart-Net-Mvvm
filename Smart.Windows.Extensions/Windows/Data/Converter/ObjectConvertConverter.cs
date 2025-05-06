@@ -1,4 +1,4 @@
-namespace Smart.Windows.Data;
+namespace Smart.Windows.Data.Converter;
 
 using System.Globalization;
 using System.Windows.Data;
