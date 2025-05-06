@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Smart.Mvvm.Generator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Smart.Mvvm.Tests\\Smart.Mvvm.Tests.csproj"
+    }
+  }
+}

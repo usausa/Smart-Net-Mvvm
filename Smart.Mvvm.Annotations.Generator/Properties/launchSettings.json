@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Smart.Mvvm.Annotations.Generator": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Smart.Mvvm.Annotations.Tests\\Smart.Mvvm.Annotations.Tests.csproj"
-    }
-  }
-}

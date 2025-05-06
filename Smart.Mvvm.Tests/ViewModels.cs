@@ -1,5 +1,7 @@
 // ReSharper disable StringLiteralTypo
-namespace Smart.Mvvm.Annotations;
+namespace Smart.Mvvm;
+
+using Smart.Mvvm.Attributes;
 
 public sealed partial class ViewModel : ObservableObject
 {

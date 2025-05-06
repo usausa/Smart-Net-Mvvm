@@ -1,4 +1,4 @@
-namespace Smart.Mvvm.Annotations.Generator;
+namespace Smart.Mvvm.Generator;
 
 using Microsoft.CodeAnalysis;
 

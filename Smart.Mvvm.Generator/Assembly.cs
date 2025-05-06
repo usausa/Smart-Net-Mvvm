@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(false)]
 
-[assembly: InternalsVisibleTo("Smart.Mvvm.Annotations.Tests")]
+[assembly: InternalsVisibleTo("Smart.Mvvm.Tests")]
 
 // ReSharper disable ArrangeNamespaceBody
 // ReSharper disable CheckNamespace

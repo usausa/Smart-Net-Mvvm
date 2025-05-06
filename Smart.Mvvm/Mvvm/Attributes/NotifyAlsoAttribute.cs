@@ -1,4 +1,4 @@
-namespace Smart.Mvvm;
+namespace Smart.Mvvm.Attributes;
 
 using System;
 

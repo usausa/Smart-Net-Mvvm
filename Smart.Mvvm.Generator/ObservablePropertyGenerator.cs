@@ -1,4 +1,4 @@
-namespace Smart.Mvvm.Annotations.Generator;
+namespace Smart.Mvvm.Generator;
 
 using System;
 using System.Collections.Immutable;
@@ -8,15 +8,15 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-using Smart.Mvvm.Annotations.Generator.Models;
+using Smart.Mvvm.Generator.Models;
 
 using SourceGenerateHelper;
 
 [Generator]
 public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeName = "Smart.Mvvm.ObservablePropertyAttribute";
-    private const string NotifyAlsoAttributeName = "Smart.Mvvm.NotifyAlsoAttribute";
+    private const string AttributeName = "Smart.Mvvm.Attributes.ObservablePropertyAttribute";
+    private const string NotifyAlsoAttributeName = "Smart.Mvvm.Attributes.NotifyAlsoAttribute";
 
     private const string ObservableObjectName = "Smart.Mvvm.ObservableObject";
     private const string TriggerMethodName = "RaisePropertyChanged";

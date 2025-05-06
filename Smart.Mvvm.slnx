@@ -4,7 +4,7 @@
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
     <File Path="Analyzers.ruleset" />
-    <File Path="Smart.Mvvm.Annotations.props" />
+    <File Path="Smart.Mvvm.props" />
     <File Path="Smart.Mvvm.sln.DotSettings" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
@@ -12,8 +12,7 @@
     <File Path="README.md" />
     <File Path="test.runsettings" />
   </Folder>
-  <Project Path="Smart.Mvvm.Annotations.Generator/Smart.Mvvm.Annotations.Generator.csproj" />
-  <Project Path="Smart.Mvvm.Annotations.Tests/Smart.Mvvm.Annotations.Tests.csproj" />
-  <Project Path="Smart.Mvvm.Annotations/Smart.Mvvm.Annotations.csproj" />
+  <Project Path="Smart.Mvvm.Generator/Smart.Mvvm.Generator.csproj" />
+  <Project Path="Smart.Mvvm.Tests/Smart.Mvvm.Tests.csproj" />
   <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" />
 </Solution>
