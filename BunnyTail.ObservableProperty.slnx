@@ -7,7 +7,6 @@
   </Folder>
   <Folder Name="/Ref/" Id="ddb4ef12-cc4e-5e88-e6fc-71a802f4de97">
     <Project Path="Smart.Windows.Behaviors/Smart.Windows.Behaviors.csproj" />
-    <Project Path="Smart.Windows.Reactive/Smart.Windows.Reactive.csproj" />
     <Project Path="Smart.Windows/Smart.Windows.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
