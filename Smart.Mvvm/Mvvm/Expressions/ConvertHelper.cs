@@ -1,4 +1,4 @@
-namespace Smart.Windows.Expressions;
+namespace Smart.Mvvm.Expressions;
 
 using System.ComponentModel;
 using System.Globalization;

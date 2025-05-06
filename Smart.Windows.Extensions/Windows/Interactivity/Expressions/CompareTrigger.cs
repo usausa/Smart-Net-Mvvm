@@ -1,10 +1,10 @@
-namespace Smart.Windows.Interactivity;
+namespace Smart.Windows.Interactivity.Expressions;
 
 using System.Windows;
 
 using Microsoft.Xaml.Behaviors;
 
-using Smart.Windows.Expressions;
+using Smart.Mvvm.Expressions;
 
 [TypeConstraint(typeof(DependencyObject))]
 public sealed class CompareTrigger : TriggerBase<DependencyObject>

@@ -1,9 +1,9 @@
-namespace Smart.Windows.Data;
+namespace Smart.Windows.Data.Expressions;
 
 using System.Globalization;
 using System.Windows.Data;
 
-using Smart.Windows.Expressions;
+using Smart.Mvvm.Expressions;
 
 public sealed class MultiBinaryConverter : IMultiValueConverter
 {

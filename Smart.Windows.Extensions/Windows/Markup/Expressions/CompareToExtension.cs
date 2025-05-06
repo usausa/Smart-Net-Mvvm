@@ -1,11 +1,11 @@
-namespace Smart.Windows.Markup;
+namespace Smart.Windows.Markup.Expressions;
 
 using System.Windows;
 using System.Windows.Markup;
 using System.Windows.Media;
 
-using Smart.Windows.Data;
-using Smart.Windows.Expressions;
+using Smart.Mvvm.Expressions;
+using Smart.Windows.Data.Expressions;
 
 [MarkupExtensionReturnType(typeof(CompareToBoolConverter))]
 public sealed class CompareToBoolExtension : MarkupExtension

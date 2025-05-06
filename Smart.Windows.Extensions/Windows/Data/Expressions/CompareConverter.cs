@@ -1,11 +1,11 @@
-namespace Smart.Windows.Data;
+namespace Smart.Windows.Data.Expressions;
 
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
-using Smart.Windows.Expressions;
+using Smart.Mvvm.Expressions;
 
 public abstract class CompareConverter<T> : IValueConverter
 {
