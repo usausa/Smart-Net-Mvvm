@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/Ref/">
+    <Project Path="Smart.Windows.Behaviors/Smart.Windows.Behaviors.csproj" />
+    <Project Path="Smart.Windows.Extensions/Smart.Windows.Extensions.csproj" />
+    <Project Path="Smart.Windows/Smart.Windows.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Analyzers.ruleset" />
+    <File Path="Smart.Mvvm.Annotations.props" />
+    <File Path="Smart.Mvvm.sln.DotSettings" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="test.runsettings" />
+  </Folder>
+  <Project Path="Develop/Develop.csproj" />
+  <Project Path="Smart.Mvvm.Annotations.Generator/Smart.Mvvm.Annotations.Generator.csproj" />
+  <Project Path="Smart.Mvvm.Annotations.Tests/Smart.Mvvm.Annotations.Tests.csproj" />
+  <Project Path="Smart.Mvvm.Annotations/Smart.Mvvm.Annotations.csproj" />
+  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" />
+</Solution>

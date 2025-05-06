@@ -1,4 +1,4 @@
-namespace BunnyTail.ObservableProperty.Generator.Models;
+namespace Smart.Mvvm.Annotations.Generator.Models;
 
 using Microsoft.CodeAnalysis;
 
@@ -8,8 +8,6 @@ internal sealed record PropertyModel(
     string Namespace,
     string ClassName,
     bool IsValueType,
-    bool ImplementEvent,
-    bool ImplementTrigger,
     Accessibility PropertyAccessibility,
     string PropertyType,
     string PropertyName,

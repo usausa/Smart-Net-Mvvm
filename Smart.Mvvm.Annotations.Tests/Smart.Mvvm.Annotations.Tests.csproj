@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <CodeAnalysisRuleSet>..\Analyzers.ruleset</CodeAnalysisRuleSet>
-    <RootNamespace>BunnyTail.ObservableProperty</RootNamespace>
+    <RootNamespace>Smart.Mvvm.Annotations</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,11 +15,7 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TemplateLibraryGeneratorValue>test</TemplateLibraryGeneratorValue>
-  </PropertyGroup>
-
-  <Import Project="..\BunnyTail.ObservableProperty.props" />
+  <Import Project="..\Smart.Mvvm.Annotations.props" />
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
@@ -35,8 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BunnyTail.ObservableProperty.Generator\BunnyTail.ObservableProperty.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\BunnyTail.ObservableProperty\BunnyTail.ObservableProperty.csproj" />
+    <ProjectReference Include="..\Smart.Mvvm.Annotations.Generator\Smart.Mvvm.Annotations.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Smart.Mvvm.Annotations\Smart.Mvvm.Annotations.csproj" />
   </ItemGroup>
 
 </Project>

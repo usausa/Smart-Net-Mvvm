@@ -3,8 +3,10 @@ namespace Smart.Mvvm.ViewModels;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
+using Smart.Mvvm;
 using Smart.Mvvm.Internal;
 using Smart.Mvvm.Messaging;
+using Smart.Mvvm.State;
 
 #pragma warning disable IDE0032
 // ReSharper disable ReplaceWithFieldKeyword

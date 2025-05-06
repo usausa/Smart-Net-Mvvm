@@ -1,4 +1,4 @@
-namespace BunnyTail.ObservableProperty;
+namespace Smart.Mvvm.Annotations;
 
 public class UnitTest1
 {

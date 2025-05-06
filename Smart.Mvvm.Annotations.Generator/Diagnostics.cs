@@ -1,4 +1,4 @@
-namespace BunnyTail.ObservableProperty.Generator;
+namespace Smart.Mvvm.Annotations.Generator;
 
 using Microsoft.CodeAnalysis;
 
@@ -20,18 +20,10 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public static DiagnosticDescriptor TypeMustImplementNotifyPropertyChanged => new(
+    public static DiagnosticDescriptor InvalidTypeDefinition => new(
         id: "BTOP0003",
-        title: "Type must implement INotifyPropertyChanged",
-        messageFormat: "Type must implement INotifyPropertyChanged. type=[{0}]",
-        category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static DiagnosticDescriptor TypeMustImplementObservableObject => new(
-        id: "BTOP0004",
-        title: "Type must implement IObservableObject",
-        messageFormat: "Type must implement IObservableObject. type=[{0}]",
+        title: "Invalid type definition",
+        messageFormat: "Type must extend ObservableObject. type=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

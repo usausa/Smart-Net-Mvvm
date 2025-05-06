@@ -12,11 +12,12 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
-  <Import Project="..\BunnyTail.ObservableProperty.props" />
+  <Import Project="..\Smart.Mvvm.Annotations.props" />
 
   <ItemGroup>
-    <ProjectReference Include="..\BunnyTail.ObservableProperty.Generator\BunnyTail.ObservableProperty.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\BunnyTail.ObservableProperty\BunnyTail.ObservableProperty.csproj" />
+    <ProjectReference Include="..\Smart.Mvvm.Annotations.Generator\Smart.Mvvm.Annotations.Generator.csproj" OutputItemType="analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Smart.Mvvm.Annotations\Smart.Mvvm.Annotations.csproj" />
+    <ProjectReference Include="..\Smart.Mvvm\Smart.Mvvm.csproj" />
   </ItemGroup>
 
 </Project>

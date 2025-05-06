@@ -3,9 +3,7 @@
 #pragma warning disable CA1812
 namespace Develop;
 
-using System.ComponentModel;
-
-using BunnyTail.ObservableProperty;
+using Smart.Mvvm;
 
 internal static class Program
 {
@@ -23,17 +21,7 @@ internal static class Program
     }
 }
 
-internal abstract class ViewModelBase : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected void RaisePropertyChanged(PropertyChangedEventArgs args)
-    {
-        PropertyChanged?.Invoke(this, args);
-    }
-}
-
-internal sealed partial class ViewModel : ViewModelBase
+internal sealed partial class ViewModel : ObservableObject
 {
     [ObservableProperty]
     [NotifyAlso(nameof(FullName))]

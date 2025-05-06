@@ -1,4 +1,4 @@
-namespace Smart.Mvvm.ViewModels;
+namespace Smart.Mvvm.State;
 
 public static class BusyStateExtensions
 {

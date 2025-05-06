@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(false)]
 
-[assembly: InternalsVisibleTo("BunnyTail.ObservableProperty.Tests")]
+[assembly: InternalsVisibleTo("Smart.Mvvm.Annotations.Tests")]
 
 // ReSharper disable ArrangeNamespaceBody
 // ReSharper disable CheckNamespace

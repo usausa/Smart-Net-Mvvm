@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "BunnyTail.ObservableProperty.Generator": {
+    "Smart.Mvvm.Annotations.Generator": {
       "commandName": "DebugRoslynComponent",
       "targetProject": "..\\Develop\\Develop.csproj"
     }

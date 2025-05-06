@@ -1,9 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
     <CodeAnalysisRuleSet>..\Analyzers.ruleset</CodeAnalysisRuleSet>
     <RootNamespace>Smart</RootNamespace>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackBuildOutputs</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="PackBuildOutputs" DependsOnTargets="SatelliteDllsProjectOutputGroup;DebugSymbolsProjectOutputGroup">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="..\Smart.Mvvm.Annotations.props" PackagePath="build" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\Smart.Mvvm.Annotations.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+      <TfmSpecificPackageFile Include="$(PKGSourceGenerateHelper)\lib\netstandard2.0\SourceGenerateHelper.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <PropertyGroup>
+    <PackageId>Smart.Mvvm.Annotations</PackageId>
+    <Title>Smart.Mvvm.Annotations</Title>
+    <Description>Observable property source generator.</Description>
+    <PackageTags>sourcegenerator</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SourceGenerateHelper" Version="1.2.0" GeneratePathProperty="true" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Smart.Mvvm.Annotations.Generator\Smart.Mvvm.Annotations.Generator.csproj" PrivateAssets="all" />
+  </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 namespace Smart.Windows.ViewModels;
 
+using Smart.Mvvm.State;
 using Smart.Mvvm.ViewModels;
 using Smart.Windows.Input;
 

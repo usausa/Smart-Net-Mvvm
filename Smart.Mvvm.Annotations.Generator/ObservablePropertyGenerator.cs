@@ -1,28 +1,25 @@
-namespace BunnyTail.ObservableProperty.Generator;
+namespace Smart.Mvvm.Annotations.Generator;
 
 using System;
 using System.Collections.Immutable;
 using System.Text;
 
-using BunnyTail.ObservableProperty.Generator.Models;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+
+using Smart.Mvvm.Annotations.Generator.Models;
 
 using SourceGenerateHelper;
 
 [Generator]
 public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeName = "BunnyTail.ObservableProperty.ObservablePropertyAttribute";
+    private const string AttributeName = "Smart.Mvvm.ObservablePropertyAttribute";
+    private const string NotifyAlsoAttributeName = "Smart.Mvvm.NotifyAlsoAttribute";
 
-    private const string NotifyAlsoAttributeName = "BunnyTail.ObservableProperty.NotifyAlsoAttribute";
-
-    private const string ObservableObjectName = "BunnyTail.ObservableProperty.IObservableObject";
-    private const string ObservableObjectMethodName = "RaisePropertyChanged";
-
-    private const string NotifyPropertyChangedName = "System.ComponentModel.INotifyPropertyChanged";
+    private const string ObservableObjectName = "Smart.Mvvm.ObservableObject";
+    private const string TriggerMethodName = "RaisePropertyChanged";
 
     // ------------------------------------------------------------
     // Initialize
@@ -70,19 +67,11 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
 
         // Validate type definition
-        // TODO
         var containingType = symbol.ContainingType;
-        if (!IsImplementNotifyPropertyChanged(containingType))
+        if (!IsImplementObservableObject(containingType))
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.TypeMustImplementNotifyPropertyChanged, syntax.GetLocation(), containingType.Name));
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name));
         }
-
-        //// Find trigger method
-        //var triggerMethod = FindTriggerMethod(containingType, options.GetValue<string>(TriggerMethodNamesOption));
-        //if (!triggerMethod.Find)
-        //{
-        //    return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.TriggerMethodNotFound, syntax.GetLocation(), containingType.Name));
-        //}
 
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
             ? string.Empty
@@ -95,8 +84,6 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             ns,
             containingType.GetClassName(),
             containingType.IsValueType,
-            true, // TODO
-            true, // TODO
             symbol.DeclaredAccessibility,
             symbol.Type.ToDisplayString(),
             symbol.Name,
@@ -106,65 +93,21 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             new EquatableArray<string>(notifyAlso.ToArray())));
     }
 
-    private static bool IsImplementNotifyPropertyChanged(INamedTypeSymbol typeSymbol)
+    private static bool IsImplementObservableObject(INamedTypeSymbol typeSymbol)
     {
-        foreach (var @interface in typeSymbol.AllInterfaces)
+        var symbol = typeSymbol.BaseType;
+        while (symbol is not null)
         {
-            if (@interface.ToDisplayString() == NotifyPropertyChangedName)
+            if (symbol.ToDisplayString() == ObservableObjectName)
             {
                 return true;
             }
+
+            symbol = symbol.BaseType;
         }
 
         return false;
     }
-
-    //private static (bool Find, ImplementType ImplementType, MethodType MethodType, string MethodName) FindTriggerMethod(INamedTypeSymbol typeSymbol, string methods)
-    //{
-    //    var implementType = FindEventImplementType(typeSymbol);
-    //    if (implementType is null)
-    //    {
-    //        return (true, ImplementType.None, MethodType.ByEventArgs, DefaultRaiseMethodName);
-    //    }
-
-    //    if (SymbolEqualityComparer.Default.Equals(typeSymbol, implementType))
-    //    {
-    //        // TODO 対象メソッドのライズメソッドを検索
-    //        // ある EventTrigger ＆ その名前
-    //        // なし Event、デフォルト名
-
-    //        return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
-    //    }
-
-    //    // TODO 対象メソッドのライズメソッドを検索
-    //    // ある EventTrigger ＆ その名前
-    //    // なし エラー
-    //    return (true, ImplementType.EventTrigger, MethodType.ByEventArgs, "RaisePropertyChanged");
-    //}
-
-    //private static INamedTypeSymbol? FindEventImplementType(INamedTypeSymbol typeSymbol)
-    //{
-    //    var symbol = typeSymbol;
-    //    while (symbol is not null)
-    //    {
-    //        foreach (var member in symbol.GetMembers(PropertyChangedEventName))
-    //        {
-    //            if (member is IEventSymbol eventSymbol)
-    //            {
-    //                var eventType = eventSymbol.Type.ToDisplayString();
-    //                if ((eventType == PropertyChangedEventHandlerName) ||
-    //                    (eventType == PropertyChangedEventHandlerNullableName))
-    //                {
-    //                    return symbol;
-    //                }
-    //            }
-    //        }
-
-    //        symbol = symbol.BaseType;
-    //    }
-
-    //    return null;
-    //}
 
     private static string[] GetNotifyAlsoPropertyNames(IPropertySymbol typeSymbol)
     {
@@ -232,8 +175,6 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var ns = properties[0].Namespace;
         var className = properties[0].ClassName;
         var isValueType = properties[0].IsValueType;
-        var implementEvent = properties[0].ImplementEvent;
-        var implementTrigger = properties[0].ImplementTrigger;
 
         builder.AutoGenerated();
         builder.EnableNullable();
@@ -252,10 +193,6 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             .Append("partial ")
             .Append(isValueType ? "struct " : "class ")
             .Append(className)
-            .Append(" : global::")
-            .Append(NotifyPropertyChangedName)
-            .Append(", global::")
-            .Append(ObservableObjectName)
             .NewLine();
         builder.BeginScope();
 
@@ -279,37 +216,6 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 .Append(name)
                 .Append("\");")
                 .NewLine();
-        }
-
-        if (implementEvent)
-        {
-            builder
-                .Indent()
-                .Append("public event global::System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;")
-                .NewLine();
-            builder.NewLine();
-        }
-
-        if (implementTrigger)
-        {
-            builder
-                .Indent()
-                .Append("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]")
-                .NewLine();
-            builder
-                .Indent()
-                .Append("void global::")
-                .Append(ObservableObjectName)
-                .Append(".")
-                .Append(ObservableObjectMethodName)
-                .Append("(global::System.ComponentModel.PropertyChangedEventArgs args)")
-                .NewLine();
-            builder.BeginScope();
-            builder
-                .Indent()
-                .Append("PropertyChanged?.Invoke(this, args);")
-                .NewLine();
-            builder.EndScope();
         }
 
         foreach (var property in properties)
@@ -365,7 +271,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             {
                 builder
                     .Indent()
-                    .Append(ObservableObjectMethodName)
+                    .Append(TriggerMethodName)
                     .Append('(')
                     .Append(GetEventArgsPropertyName(name))
                     .Append(");")
