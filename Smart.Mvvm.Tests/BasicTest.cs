@@ -1,5 +1,5 @@
 // ReSharper disable StringLiteralTypo
-namespace Smart.Mvvm.Annotations;
+namespace Smart.Mvvm;
 
 public class BasicTest
 {
