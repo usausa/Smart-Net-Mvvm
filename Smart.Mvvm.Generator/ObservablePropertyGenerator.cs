@@ -15,8 +15,8 @@ using SourceGenerateHelper;
 [Generator]
 public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 {
-    private const string AttributeName = "Smart.Mvvm.Attributes.ObservablePropertyAttribute";
-    private const string NotifyAlsoAttributeName = "Smart.Mvvm.Attributes.NotifyAlsoAttribute";
+    private const string AttributeName = "Smart.Mvvm.ObservablePropertyAttribute";
+    private const string NotifyAlsoPropertyName = "NotifyAlso";
 
     private const string ObservableObjectName = "Smart.Mvvm.ObservableObject";
     private const string TriggerMethodName = "RaisePropertyChanged";
@@ -109,35 +109,33 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static string[] GetNotifyAlsoPropertyNames(IPropertySymbol typeSymbol)
+    private static string[] GetNotifyAlsoPropertyNames(IPropertySymbol symbol)
     {
-        var notifyAlso = new List<string>();
+        var list = new List<string>();
 
-        foreach (var attribute in typeSymbol.GetAttributes())
+        foreach (var attribute in symbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() == NotifyAlsoAttributeName)
+            if (attribute.AttributeClass?.ToDisplayString() != AttributeName)
             {
-                foreach (var argument in attribute.ConstructorArguments)
+                continue;
+            }
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                if (argument.Key == NotifyAlsoPropertyName)
                 {
-                    if (argument.Kind == TypedConstantKind.Array)
+                    foreach (var value in argument.Value.Values)
                     {
-                        foreach (var value in argument.Values)
+                        if (value.Value is string strValue)
                         {
-                            if (value.Value is string strValue)
-                            {
-                                notifyAlso.Add(strValue);
-                            }
+                            list.Add(strValue);
                         }
-                    }
-                    else if (argument.Value is string value)
-                    {
-                        notifyAlso.Add(value);
                     }
                 }
             }
         }
 
-        return notifyAlso.ToArray();
+        return list.ToArray();
     }
 
     private static Accessibility? GetMethodAccessibility(IMethodSymbol? symbol, Accessibility defaultAccessibility)
