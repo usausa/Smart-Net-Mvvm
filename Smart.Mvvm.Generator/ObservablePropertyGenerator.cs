@@ -150,7 +150,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
     private static (bool IsReactive, bool IsViewModel) GetGeneratorOptions(ITypeSymbol typeSymbol)
     {
-        var symbol = typeSymbol.BaseType;
+        var symbol = typeSymbol;
         while (symbol is not null)
         {
             foreach (var attribute in symbol.GetAttributes())
