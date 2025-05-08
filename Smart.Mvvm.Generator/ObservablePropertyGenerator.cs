@@ -41,17 +41,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 static (context, _) => GetPropertyModel(context))
             .Collect();
 
-        var typeOptionProvider = context
-            .SyntaxProvider
-            .ForAttributeWithMetadataName(
-                ObservableGeneratorOptionAttributeName,
-                static (syntax, _) => IsTypeOptionSyntax(syntax),
-                static (context, _) => GetTypeOptionModel(context))
-            .Collect();
-
         context.RegisterImplementationSourceOutput(
-            propertyProvider.Combine(typeOptionProvider),
-            static (context, provider) => Execute(context, provider.Left, provider.Right));
+            propertyProvider,
+            static (context, provider) => Execute(context, provider));
     }
 
     // ------------------------------------------------------------
@@ -90,6 +82,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
             ? string.Empty
             : containingType.ContainingNamespace.ToDisplayString();
+        var options = GetGeneratorOptions(containingType);
         var getterAccessibility = GetMethodAccessibility(symbol.GetMethod, symbol.DeclaredAccessibility);
         var setterAccessibility = GetMethodAccessibility(symbol.SetMethod, symbol.DeclaredAccessibility);
         var notifyAlso = GetNotifyAlsoPropertyNames(symbol);
@@ -98,6 +91,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             ns,
             containingType.GetClassName(),
             containingType.IsValueType,
+            containingType.IsSealed,
+            options.IsReactive,
+            options.IsViewModel,
             symbol.DeclaredAccessibility,
             symbol.Type.ToDisplayString(),
             symbol.Name,
@@ -152,81 +148,53 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         return list.ToArray();
     }
 
+    private static (bool IsReactive, bool IsViewModel) GetGeneratorOptions(ITypeSymbol typeSymbol)
+    {
+        var symbol = typeSymbol.BaseType;
+        while (symbol is not null)
+        {
+            foreach (var attribute in symbol.GetAttributes())
+            {
+                var isReactive = false;
+                var isViewModel = false;
+
+                if (attribute.AttributeClass?.ToDisplayString() != ObservableGeneratorOptionAttributeName)
+                {
+                    continue;
+                }
+
+                foreach (var argument in attribute.NamedArguments)
+                {
+                    if (argument.Key == ReactivePropertyName)
+                    {
+                        isReactive = (bool)argument.Value.Value!;
+                    }
+                    else if (argument.Key == ViewModelPropertyName)
+                    {
+                        isViewModel = (bool)argument.Value.Value!;
+                    }
+                }
+
+                return (isReactive, isViewModel);
+            }
+
+            symbol = symbol.BaseType;
+        }
+
+        return (false, false);
+    }
+
     private static Accessibility? GetMethodAccessibility(IMethodSymbol? symbol, Accessibility defaultAccessibility)
     {
         return ((symbol is not null) && (symbol.DeclaredAccessibility != defaultAccessibility)) ? symbol.DeclaredAccessibility : null;
     }
-
-    // ------------------------------------------------------------
-    // Parser
-    // ------------------------------------------------------------
-
-    private static bool IsTypeOptionSyntax(SyntaxNode syntax) =>
-        syntax is ClassDeclarationSyntax or StructDeclarationSyntax;
-
-    private static Result<TypeOptionModel> GetTypeOptionModel(GeneratorAttributeSyntaxContext context)
-    {
-        if (context.SemanticModel.GetDeclaredSymbol(context.TargetNode) is not INamedTypeSymbol symbol)
-        {
-            return Results.Error<TypeOptionModel>(null);
-        }
-
-        var ns = String.IsNullOrEmpty(symbol.ContainingNamespace.Name)
-            ? string.Empty
-            : symbol.ContainingNamespace.ToDisplayString();
-
-        var isReactive = false;
-        var isViewMode = false;
-        foreach (var attribute in symbol.GetAttributes())
-        {
-            if (attribute.AttributeClass?.ToDisplayString() != ObservableGeneratorOptionAttributeName)
-            {
-                continue;
-            }
-
-            foreach (var argument in attribute.NamedArguments)
-            {
-                switch (argument.Key)
-                {
-                    case ReactivePropertyName:
-                    {
-                        if (argument.Value.Value is bool boolValue)
-                        {
-                            isReactive = boolValue;
-                        }
-                        break;
-                    }
-                    case ViewModelPropertyName:
-                    {
-                        if (argument.Value.Value is bool boolValue)
-                        {
-                            isViewMode = boolValue;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-
-        return Results.Success(new TypeOptionModel(
-            ns,
-            symbol.GetClassName(),
-            symbol.IsSealed,
-            isReactive,
-            isViewMode));
-    }
-
     // ------------------------------------------------------------
     // Generator
     // ------------------------------------------------------------
 
-    private static void Execute(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties, ImmutableArray<Result<TypeOptionModel>> options)
+    private static void Execute(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties)
     {
         foreach (var info in properties.SelectError())
-        {
-            context.ReportDiagnostic(info);
-        }
-        foreach (var info in options.SelectError())
         {
             context.ReportDiagnostic(info);
         }
@@ -236,12 +204,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         {
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            var option = options
-                .SelectValue()
-                .FirstOrDefault(x => x.Namespace == group.Key.Namespace && x.ClassName == group.Key.ClassName);
-
             builder.Clear();
-            BuildSource(builder, group.ToList(), option);
+            BuildSource(builder, group.ToList());
 
             var filename = MakeFilename(group.Key.Namespace, group.Key.ClassName);
             var source = builder.ToString();
@@ -249,15 +213,14 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
     }
 
-    private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties, TypeOptionModel? option)
+    private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
     {
         var ns = properties[0].Namespace;
         var className = properties[0].ClassName;
         var isValueType = properties[0].IsValueType;
-
-        var isSealed = option?.Sealed ?? false;
-        var isReactive = option?.Reactive ?? false;
-        var isViewModel = option?.ViewModel ?? false;
+        var isSealed = properties[0].IsSealed;
+        var isReactive = properties[0].IsReactive;
+        var isViewModel = properties[0].IsViewModel;
 
         builder.AutoGenerated();
         builder.EnableNullable();

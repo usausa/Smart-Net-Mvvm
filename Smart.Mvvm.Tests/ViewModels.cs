@@ -4,7 +4,11 @@ namespace Smart.Mvvm;
 using Smart.Mvvm.ViewModels;
 
 [ObservableGeneratorOption(Reactive = true, ViewModel = true)]
-public sealed partial class ViewModel : ViewModelBase
+public abstract class AppViewModel : ViewModelBase
+{
+}
+
+public sealed partial class ViewModel : AppViewModel
 {
     [ObservableProperty(NotifyAlso = [nameof(FullName)])]
     public partial string FirstName { get; set; } = default!;
