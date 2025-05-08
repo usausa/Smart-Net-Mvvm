@@ -1,10 +1,12 @@
 namespace Smart.Mvvm.Generator;
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -17,6 +19,10 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 {
     private const string AttributeName = "Smart.Mvvm.ObservablePropertyAttribute";
     private const string NotifyAlsoPropertyName = "NotifyAlso";
+
+    private const string ObservableGeneratorOptionAttributeName = "Smart.Mvvm.ObservableGeneratorOptionAttribute";
+    private const string ReactivePropertyName = "Reactive";
+    private const string ViewModelPropertyName = "ViewModel";
 
     private const string ObservableObjectName = "Smart.Mvvm.ObservableObject";
     private const string TriggerMethodName = "RaisePropertyChanged";
@@ -35,9 +41,17 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 static (context, _) => GetPropertyModel(context))
             .Collect();
 
+        var typeOptionProvider = context
+            .SyntaxProvider
+            .ForAttributeWithMetadataName(
+                ObservableGeneratorOptionAttributeName,
+                static (syntax, _) => IsTypeOptionSyntax(syntax),
+                static (context, _) => GetTypeOptionModel(context))
+            .Collect();
+
         context.RegisterImplementationSourceOutput(
-            propertyProvider,
-            static (context, provider) => Execute(context, provider));
+            propertyProvider.Combine(typeOptionProvider),
+            static (context, provider) => Execute(context, provider.Left, provider.Right));
     }
 
     // ------------------------------------------------------------
@@ -50,7 +64,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     private static Result<PropertyModel> GetPropertyModel(GeneratorAttributeSyntaxContext context)
     {
         var syntax = (PropertyDeclarationSyntax)context.TargetNode;
-        if (context.SemanticModel.GetDeclaredSymbol(syntax) is not IPropertySymbol symbol)
+        if (context.SemanticModel.GetDeclaredSymbol(syntax) is not { } symbol)
         {
             return Results.Error<PropertyModel>(null);
         }
@@ -144,12 +158,75 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     }
 
     // ------------------------------------------------------------
+    // Parser
+    // ------------------------------------------------------------
+
+    private static bool IsTypeOptionSyntax(SyntaxNode syntax) =>
+        syntax is ClassDeclarationSyntax or StructDeclarationSyntax;
+
+    private static Result<TypeOptionModel> GetTypeOptionModel(GeneratorAttributeSyntaxContext context)
+    {
+        if (context.SemanticModel.GetDeclaredSymbol(context.TargetNode) is not INamedTypeSymbol symbol)
+        {
+            return Results.Error<TypeOptionModel>(null);
+        }
+
+        var ns = String.IsNullOrEmpty(symbol.ContainingNamespace.Name)
+            ? string.Empty
+            : symbol.ContainingNamespace.ToDisplayString();
+
+        var isReactive = false;
+        var isViewMode = false;
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (attribute.AttributeClass?.ToDisplayString() != ObservableGeneratorOptionAttributeName)
+            {
+                continue;
+            }
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                switch (argument.Key)
+                {
+                    case ReactivePropertyName:
+                    {
+                        if (argument.Value.Value is bool boolValue)
+                        {
+                            isReactive = boolValue;
+                        }
+                        break;
+                    }
+                    case ViewModelPropertyName:
+                    {
+                        if (argument.Value.Value is bool boolValue)
+                        {
+                            isViewMode = boolValue;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return Results.Success(new TypeOptionModel(
+            ns,
+            symbol.GetClassName(),
+            symbol.IsSealed,
+            isReactive,
+            isViewMode));
+    }
+
+    // ------------------------------------------------------------
     // Generator
     // ------------------------------------------------------------
 
-    private static void Execute(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties)
+    private static void Execute(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties, ImmutableArray<Result<TypeOptionModel>> options)
     {
         foreach (var info in properties.SelectError())
+        {
+            context.ReportDiagnostic(info);
+        }
+        foreach (var info in options.SelectError())
         {
             context.ReportDiagnostic(info);
         }
@@ -159,8 +236,12 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         {
             context.CancellationToken.ThrowIfCancellationRequested();
 
+            var option = options
+                .SelectValue()
+                .FirstOrDefault(x => x.Namespace == group.Key.Namespace && x.ClassName == group.Key.ClassName);
+
             builder.Clear();
-            BuildSource(builder, group.ToList());
+            BuildSource(builder, group.ToList(), option);
 
             var filename = MakeFilename(group.Key.Namespace, group.Key.ClassName);
             var source = builder.ToString();
@@ -168,11 +249,15 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
     }
 
-    private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
+    private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties, TypeOptionModel? option)
     {
         var ns = properties[0].Namespace;
         var className = properties[0].ClassName;
         var isValueType = properties[0].IsValueType;
+
+        var isSealed = option?.Sealed ?? false;
+        var isReactive = option?.Reactive ?? false;
+        var isViewModel = option?.ViewModel ?? false;
 
         builder.AutoGenerated();
         builder.EnableNullable();
@@ -182,6 +267,12 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         if (!String.IsNullOrEmpty(ns))
         {
             builder.Namespace(ns);
+            builder.NewLine();
+        }
+
+        if (isReactive)
+        {
+            builder.Append("using System.Reactive.Linq;").NewLine();
             builder.NewLine();
         }
 
@@ -279,6 +370,91 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             builder.EndScope();
 
             builder.EndScope();
+        }
+
+        // Reactive option
+        if (isReactive)
+        {
+            foreach (var property in properties)
+            {
+                builder.NewLine();
+
+                // method
+                builder
+                    .Indent()
+                    .Append(isSealed ? "private" : "protected")
+                    .Append(" global::System.IObservable<")
+                    .Append(property.PropertyType)
+                    .Append("> Observe")
+                    .Append(property.PropertyName)
+                    .Append("()")
+                    .NewLine();
+                builder.BeginScope();
+
+                builder
+                    .Indent()
+                    .Append("return global::System.Reactive.Linq.Observable.FromEvent<global::System.ComponentModel.PropertyChangedEventHandler, global::System.ComponentModel.PropertyChangedEventArgs>(")
+                    .NewLine();
+                builder.IndentLevel += 2;
+                builder
+                    .Indent()
+                    .Append("static h => (_, e) => h(e),")
+                    .NewLine();
+                builder
+                    .Indent()
+                    .Append("h => PropertyChanged += h,")
+                    .NewLine();
+                builder
+                    .Indent()
+                    .Append("h => PropertyChanged -= h)")
+                    .NewLine();
+                builder.IndentLevel--;
+                builder
+                    .Indent()
+                    .Append(".Where(static x => x.PropertyName == nameof(")
+                    .Append(property.PropertyName)
+                    .Append("))")
+                    .NewLine();
+                builder
+                    .Indent()
+                    .Append(".Select(_ => ")
+                    .Append(property.PropertyName)
+                    .Append(");")
+                    .NewLine();
+                builder.IndentLevel--;
+
+                builder.EndScope();
+            }
+        }
+
+        // ViewModel option
+        if (isViewModel && isReactive)
+        {
+            foreach (var property in properties)
+            {
+                builder.NewLine();
+
+                // method
+                builder
+                    .Indent()
+                    .Append(isSealed ? "private" : "protected")
+                    .Append(" void Subscribe")
+                    .Append(property.PropertyName)
+                    .Append("(global::System.Action<")
+                    .Append(property.PropertyType)
+                    .Append("> action)")
+                    .NewLine();
+                builder.BeginScope();
+
+                builder
+                    .Indent()
+                    .Append("Disposables.Add(Observe")
+                    .Append(property.PropertyName)
+                    .Append("().Subscribe(action));")
+                    .NewLine();
+
+                builder.EndScope();
+            }
         }
 
         builder.EndScope();

@@ -1,7 +1,10 @@
 // ReSharper disable StringLiteralTypo
 namespace Smart.Mvvm;
 
-public sealed partial class ViewModel : ObservableObject
+using Smart.Mvvm.ViewModels;
+
+[ObservableGeneratorOption(Reactive = true, ViewModel = true)]
+public sealed partial class ViewModel : ViewModelBase
 {
     [ObservableProperty(NotifyAlso = [nameof(FullName)])]
     public partial string FirstName { get; set; } = default!;

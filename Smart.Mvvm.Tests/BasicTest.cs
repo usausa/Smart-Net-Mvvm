@@ -6,7 +6,7 @@ public class BasicTest
     [Fact]
     public void TestBasic()
     {
-        var vm = new ViewModel();
+        using var vm = new ViewModel();
 
         var called = new HashSet<string>();
         vm.PropertyChanged += (_, args) => called.Add(args.PropertyName!);
