@@ -14,10 +14,6 @@ public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposa
 {
     private ListDisposable? disposables;
 
-    private IBusyState? busyState;
-
-    private IMessenger? messenger;
-
     // ------------------------------------------------------------
     // Disposables
     // ------------------------------------------------------------
@@ -28,13 +24,13 @@ public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposa
     // Busy
     // ------------------------------------------------------------
 
-    public IBusyState BusyState => busyState ??= new BusyState();
+    public IBusyState BusyState { get; }
 
     // ------------------------------------------------------------
     // Messenger
     // ------------------------------------------------------------
 
-    public IMessenger Messenger => messenger ??= new Messenger();
+    public IMessenger Messenger { get; }
 
     // ------------------------------------------------------------
     // Validation
@@ -85,23 +81,24 @@ public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposa
     // ------------------------------------------------------------
 
     protected ViewModelBase()
+        : this(Smart.Mvvm.State.BusyState.Default, Smart.Mvvm.Messaging.Messenger.Default)
     {
     }
 
     protected ViewModelBase(IBusyState busyState)
+        : this(busyState, Smart.Mvvm.Messaging.Messenger.Default)
     {
-        this.busyState = busyState;
     }
 
     protected ViewModelBase(IMessenger messenger)
+        : this(Smart.Mvvm.State.BusyState.Default, messenger)
     {
-        this.messenger = messenger;
     }
 
     protected ViewModelBase(IBusyState busyState, IMessenger messenger)
     {
-        this.busyState = busyState;
-        this.messenger = messenger;
+        BusyState = busyState;
+        Messenger = messenger;
     }
 
     ~ViewModelBase()

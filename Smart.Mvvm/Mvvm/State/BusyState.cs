@@ -6,6 +6,8 @@ public class BusyState : ObservableObject, IBusyState
 {
     private static readonly PropertyChangedEventArgs IsBusyChangedEventArgs = new(nameof(IsBusy));
 
+    public static IBusyState Default { get; } = new BusyState();
+
     private int counter;
 
     public bool IsBusy => counter > 0;

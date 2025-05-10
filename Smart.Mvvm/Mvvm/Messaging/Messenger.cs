@@ -7,6 +7,8 @@ public sealed class Messenger : IMessenger
     [EditorBrowsable(EditorBrowsableState.Never)]
     public event EventHandler<MessengerEventArgs>? Received;
 
+    public static IMessenger Default { get; } = new Messenger();
+
     public void Send(string label)
     {
         Received?.Invoke(this, new MessengerEventArgs(label, typeof(object), null));
