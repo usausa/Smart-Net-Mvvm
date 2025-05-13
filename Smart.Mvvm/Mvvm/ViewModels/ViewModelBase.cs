@@ -2,7 +2,6 @@ namespace Smart.Mvvm.ViewModels;
 
 using Smart.Mvvm;
 using Smart.Mvvm.Messaging;
-using Smart.Mvvm.State;
 
 #pragma warning disable IDE0032
 // ReSharper disable ReplaceWithFieldKeyword
@@ -33,7 +32,7 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     // ------------------------------------------------------------
 
     protected ViewModelBase()
-        : this(Smart.Mvvm.State.BusyState.Default, Smart.Mvvm.Messaging.Messenger.Default)
+        : this(Smart.Mvvm.ViewModels.BusyState.Default, Smart.Mvvm.Messaging.Messenger.Default)
     {
     }
 
@@ -43,7 +42,7 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     }
 
     protected ViewModelBase(IMessenger messenger)
-        : this(Smart.Mvvm.State.BusyState.Default, messenger)
+        : this(Smart.Mvvm.ViewModels.BusyState.Default, messenger)
     {
     }
 

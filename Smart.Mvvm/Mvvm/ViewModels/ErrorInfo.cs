@@ -1,9 +1,9 @@
-namespace Smart.Mvvm.State;
+namespace Smart.Mvvm.ViewModels;
 
 using System.ComponentModel;
 
 #pragma warning disable CA1024
-public sealed class ErrorState : ObservableObject
+public sealed class ErrorInfo : ObservableObject
 {
     private static readonly PropertyChangedEventArgs ItemsChangedEventArgs = new("Item[]");
     private static readonly PropertyChangedEventArgs HasErrorChangedEventArgs = new(nameof(HasError));

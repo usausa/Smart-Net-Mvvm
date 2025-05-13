@@ -4,15 +4,18 @@ using Smart.Mvvm.Internal;
 
 public sealed class Disposables : IDisposable
 {
+    private const int DefaultCapacity = 32;
+
     private PooledList<IDisposable>? disposables;
 
     public void Dispose()
     {
         if (disposables is not null)
         {
-            foreach (var d in disposables)
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var i = 0; i < disposables.Count; i++)
             {
-                d.Dispose();
+                disposables[i].Dispose();
             }
 
             disposables.Dispose();
@@ -22,17 +25,7 @@ public sealed class Disposables : IDisposable
 
     public void Add(IDisposable disposable)
     {
-        disposables ??= new PooledList<IDisposable>(16);
+        disposables ??= new PooledList<IDisposable>(DefaultCapacity);
         disposables.Add(disposable);
-    }
-}
-
-public static class DisposablesExtensions
-{
-    public static T Add<T>(this T disposable, Disposables disposables)
-        where T : IDisposable
-    {
-        disposables.Add(disposable);
-        return disposable;
     }
 }

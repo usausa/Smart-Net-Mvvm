@@ -6,66 +6,105 @@ using System.Runtime.CompilerServices;
 
 public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
 {
-    private T[] array;
+    private const int DefaultCapacity = 16;
 
-    private int count;
+    private static readonly T[] EmptyArray = [];
 
-    public int Count => count;
+    private T[] items;
+    private int size;
 
-    public T this[int index] => array[index];
+    // Read-only property describing how many elements are in the List.
+    public int Count => size;
 
-    public PooledList(int initial = 4)
+    public T this[int index] => items[index];
+
+    public PooledList()
     {
-        array = ArrayPool<T>.Shared.Rent(initial);
+        items = EmptyArray;
+    }
+
+    public PooledList(int capacity)
+    {
+        items = ArrayPool<T>.Shared.Rent(capacity);
     }
 
     public void Dispose()
     {
-        if (array.Length > 0)
+        if (items.Length > 0)
         {
-            ArrayPool<T>.Shared.Return(array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
-            array = [];
-            count = 0;
+            ArrayPool<T>.Shared.Return(items, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+            items = EmptyArray;
         }
+        size = 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(T item)
     {
-        if (count == array.Length)
+        var array = items;
+        var length = size;
+        if ((uint)length < (uint)array.Length)
         {
-            var newArray = ArrayPool<T>.Shared.Rent(count * 2);
-            Array.Copy(array, newArray, count);
-            ArrayPool<T>.Shared.Return(array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
-            array = newArray;
+            size = length + 1;
+            array[length] = item;
         }
-
-        array[count] = item;
-        count++;
+        else
+        {
+            Grow();
+            size = length + 1;
+            items[length] = item;
+        }
     }
 
+    private void Grow()
+    {
+        var length = items.Length == 0 ? DefaultCapacity : items.Length * 2;
+        var newItems = ArrayPool<T>.Shared.Rent(length);
+        if (size > 0)
+        {
+            Array.Copy(items, newItems, size);
+        }
+        if (items.Length > 0)
+        {
+            ArrayPool<T>.Shared.Return(items, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+        }
+        items = newItems;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            array.AsSpan(0, count).Clear();
+            var length = size;
+            size = 0;
+            if (length > 0)
+            {
+                Array.Clear(items, 0, length);
+            }
         }
-        count = 0;
+        else
+        {
+            size = 0;
+        }
     }
 
-    public IEnumerator<T> GetEnumerator() => new Enumerator(this);
+    public Enumerator GetEnumerator() => new(this);
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
-    private struct Enumerator : IEnumerator<T>
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<T>)this).GetEnumerator();
+
+    public struct Enumerator : IEnumerator<T>
     {
         private readonly PooledList<T> list;
         private int index;
-        private T current;
+        private T? current;
 
-        public Enumerator(PooledList<T> list)
+        internal Enumerator(PooledList<T> list)
         {
             this.list = list;
-            current = default!;
+            current = default;
         }
 
         public void Dispose()
@@ -74,23 +113,25 @@ public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
 
         public bool MoveNext()
         {
-            if ((uint)index < (uint)list.count)
+            var localList = list;
+            if ((uint)index < (uint)localList.size)
             {
-                current = list.array[index];
+                current = localList.items[index];
                 index++;
                 return true;
             }
 
+            current = default;
             return false;
         }
 
-        public void Reset()
+        void IEnumerator.Reset()
         {
             index = 0;
-            current = default!;
+            current = default;
         }
 
-        public T Current => current;
+        public T Current => current!;
 
         object? IEnumerator.Current => current;
     }
