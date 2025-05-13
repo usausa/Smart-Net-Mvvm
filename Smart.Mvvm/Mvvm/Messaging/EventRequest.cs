@@ -3,7 +3,7 @@ namespace Smart.Mvvm.Messaging;
 using System.ComponentModel;
 using System.Diagnostics;
 
-[DebuggerDisplay("{" + nameof(ReferenceCount) + "}")]
+[DebuggerDisplay("Reference = {" + nameof(ReferenceCount) + "}")]
 public sealed class EventRequest : IEventRequest<ParameterEventArgs>
 {
     private static readonly ParameterEventArgs EmptyArgs = new(null);
@@ -11,7 +11,7 @@ public sealed class EventRequest : IEventRequest<ParameterEventArgs>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public event EventHandler<ParameterEventArgs>? Requested;
 
-    public int ReferenceCount => Requested?.GetInvocationList().Length ?? 0;
+    private int ReferenceCount => Requested?.GetInvocationList().Length ?? 0;
 
     public void Request()
     {
@@ -19,13 +19,13 @@ public sealed class EventRequest : IEventRequest<ParameterEventArgs>
     }
 }
 
-[DebuggerDisplay("{" + nameof(ReferenceCount) + "}")]
+[DebuggerDisplay("Reference = {" + nameof(ReferenceCount) + "}")]
 public sealed class EventRequest<T> : IEventRequest<ParameterEventArgs>
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public event EventHandler<ParameterEventArgs>? Requested;
 
-    public int ReferenceCount => Requested?.GetInvocationList().Length ?? 0;
+    private int ReferenceCount => Requested?.GetInvocationList().Length ?? 0;
 
     public void Request(T value)
     {
