@@ -1,24 +1,20 @@
 namespace Smart.Mvvm.ViewModels;
 
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-
 using Smart.Mvvm;
-using Smart.Mvvm.Internal;
 using Smart.Mvvm.Messaging;
 using Smart.Mvvm.State;
 
 #pragma warning disable IDE0032
 // ReSharper disable ReplaceWithFieldKeyword
-public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposable
+public abstract class ViewModelBase : ObservableObject, IDisposable
 {
-    private ListDisposable? disposables;
+    private Disposables? disposables;
 
     // ------------------------------------------------------------
     // Disposables
     // ------------------------------------------------------------
 
-    protected ICollection<IDisposable> Disposables => disposables ??= [];
+    protected Disposables Disposables => disposables ??= new Disposables();
 
     // ------------------------------------------------------------
     // Busy
@@ -31,50 +27,6 @@ public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposa
     // ------------------------------------------------------------
 
     public IMessenger Messenger { get; }
-
-    // ------------------------------------------------------------
-    // Validation
-    // ------------------------------------------------------------
-
-    public string this[string columnName]
-    {
-        get
-        {
-            var pi = GetType().GetProperty(columnName);
-            if (pi is null)
-            {
-                return string.Empty;
-            }
-
-            var results = new List<ValidationResult>();
-            if (Validator.TryValidateProperty(
-                pi.GetValue(this, null),
-                new ValidationContext(this, null, null) { MemberName = columnName },
-                results))
-            {
-                return string.Empty;
-            }
-
-            return results.First().ErrorMessage ?? string.Empty;
-        }
-    }
-
-    public string Error
-    {
-        get
-        {
-            var results = new List<ValidationResult>();
-            if (Validator.TryValidateObject(
-                this,
-                new ValidationContext(this, null, null),
-                results))
-            {
-                return string.Empty;
-            }
-
-            return String.Join(Environment.NewLine, results.Select(static r => r.ErrorMessage));
-        }
-    }
 
     // ------------------------------------------------------------
     // Constructor
@@ -117,6 +69,7 @@ public abstract class ViewModelBase : ObservableObject, IDataErrorInfo, IDisposa
         if (disposing)
         {
             disposables?.Dispose();
+            disposables = null;
         }
     }
 }

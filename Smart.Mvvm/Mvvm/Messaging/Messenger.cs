@@ -1,13 +1,17 @@
 namespace Smart.Mvvm.Messaging;
 
 using System.ComponentModel;
+using System.Diagnostics;
 
+[DebuggerDisplay("{" + nameof(ReferenceCount) + "}")]
 public sealed class Messenger : IMessenger
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
     public event EventHandler<MessengerEventArgs>? Received;
 
     public static IMessenger Default { get; } = new Messenger();
+
+    public int ReferenceCount => Received?.GetInvocationList().Length ?? 0;
 
     public void Send(string label)
     {
