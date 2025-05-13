@@ -6,7 +6,7 @@ using Smart.Mvvm.Internal;
 
 public sealed class ErrorInfo : ObservableObject, IDisposable
 {
-    private const int DefaultCapacity = 16;
+    private const int DefaultCapacityPerKey = 16;
 
     private static readonly PropertyChangedEventArgs ItemsChangedEventArgs = new("Item[]");
     private static readonly PropertyChangedEventArgs HasErrorChangedEventArgs = new(nameof(HasError));
@@ -81,18 +81,14 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         }
     }
 
-    private PooledList<string> PrepareList(string key, bool clear)
+    private PooledList<string> PrepareList(string key)
     {
         errors ??= new Dictionary<string, PooledList<string>>();
 
         if (!errors.TryGetValue(key, out var values))
         {
-            values = new PooledList<string>(DefaultCapacity);
+            values = new PooledList<string>(DefaultCapacityPerKey);
             errors.Add(key, values);
-        }
-        else if (clear)
-        {
-            values.Clear();
         }
 
         return values;
@@ -100,7 +96,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
     public void AddError(string key, string message)
     {
-        var values = PrepareList(key, false);
+        var values = PrepareList(key);
 
         values.Add(message);
 
@@ -122,17 +118,17 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             if (values is null)
             {
-                values = PrepareList(key, false);
+                values = PrepareList(key);
                 added = true;
             }
 
             values.Add(message);
         }
 
-        RaisePropertyChanged(ItemsChangedEventArgs);
-
         if (added)
         {
+            RaisePropertyChanged(ItemsChangedEventArgs);
+
             var previousError = hasError;
             hasError = true;
             if (previousError != hasError)
@@ -144,8 +140,9 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
     public void UpdateError(string key, string message)
     {
-        var values = PrepareList(key, true);
+        var values = PrepareList(key);
 
+        values.Clear();
         values.Add(message);
 
         RaisePropertyChanged(ItemsChangedEventArgs);
@@ -166,7 +163,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             if (values is null)
             {
-                values = PrepareList(key, true);
+                values = PrepareList(key);
+                values.Clear();
                 errorExist = true;
             }
 
@@ -175,6 +173,11 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
         if (!errorExist && (errors is not null))
         {
+            if (errors.TryGetValue(key, out values))
+            {
+                values.Clear();
+            }
+
             foreach (var kvp in errors)
             {
                 if (kvp.Value.Count > 0)
@@ -184,6 +187,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
                 }
             }
         }
+
+        RaisePropertyChanged(ItemsChangedEventArgs);
 
         var previousError = hasError;
         hasError = errorExist;
