@@ -16,6 +16,12 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     protected Disposables Disposables => disposables ??= new Disposables();
 
     // ------------------------------------------------------------
+    // ErrorInfo
+    // ------------------------------------------------------------
+
+    public ErrorInfo Errors { get; } = new();
+
+    // ------------------------------------------------------------
     // Busy
     // ------------------------------------------------------------
 
@@ -69,6 +75,8 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
         {
             disposables?.Dispose();
             disposables = null;
+
+            Errors.Dispose();
         }
     }
 }
