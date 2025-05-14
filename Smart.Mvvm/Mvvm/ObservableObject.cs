@@ -6,6 +6,9 @@ public abstract class ObservableObject : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    protected int PropertyChangedReferenceCount => PropertyChanged?.GetInvocationList().Length ?? 0;
+
 #pragma warning disable CA1030
     protected void RaisePropertyChanged(PropertyChangedEventArgs args)
     {

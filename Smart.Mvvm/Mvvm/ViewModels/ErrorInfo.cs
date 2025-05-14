@@ -1,9 +1,11 @@
 namespace Smart.Mvvm.ViewModels;
 
 using System.ComponentModel;
+using System.Diagnostics;
 
 using Smart.Mvvm.Internal;
 
+[DebuggerDisplay("Reference = {" + nameof(PropertyChangedReferenceCount) + "}, HasError = {" + nameof(HasError) + "}")]
 public sealed class ErrorInfo : ObservableObject, IDisposable
 {
     private const int DefaultCapacityPerKey = 16;
