@@ -10,14 +10,14 @@ public abstract class ObservableObject : INotifyPropertyChanged
     protected int PropertyChangedReferenceCount => PropertyChanged?.GetInvocationList().Length ?? 0;
 
 #pragma warning disable CA1030
-    protected void RaisePropertyChanged(PropertyChangedEventArgs args)
+    protected virtual void RaisePropertyChanged(PropertyChangedEventArgs args)
     {
         PropertyChanged?.Invoke(this, args);
     }
 
     protected void RaisePropertyChanged(string? propertyName)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        RaisePropertyChanged(new PropertyChangedEventArgs(propertyName));
     }
 #pragma warning restore CA1030
 }
