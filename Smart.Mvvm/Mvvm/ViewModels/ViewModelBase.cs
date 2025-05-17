@@ -1,5 +1,7 @@
 namespace Smart.Mvvm.ViewModels;
 
+using System.ComponentModel;
+
 using Smart.Mvvm;
 using Smart.Mvvm.Messaging;
 
@@ -7,6 +9,8 @@ using Smart.Mvvm.Messaging;
 // ReSharper disable ReplaceWithFieldKeyword
 public abstract class ViewModelBase : ObservableObject, IDisposable
 {
+    private static readonly PropertyChangedEventArgs ErrorsChangedEventArgs = new(nameof(Errors));
+
     private Disposables? disposables;
 
     // ------------------------------------------------------------
@@ -56,6 +60,7 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     {
         BusyState = busyState;
         Messenger = messenger;
+        Errors.Handler = OnErrorChanged;
     }
 
     ~ViewModelBase()
@@ -78,5 +83,10 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
 
             Errors.Dispose();
         }
+    }
+
+    private void OnErrorChanged()
+    {
+        RaisePropertyChanged(ErrorsChangedEventArgs);
     }
 }

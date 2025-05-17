@@ -23,6 +23,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
     public string? this[string key] =>
         (errors is not null) && errors.TryGetValue(key, out var values) && (values.Count > 0) ? values[0] : null;
 
+    internal Action? Handler { get; set; }
+
     public void Dispose()
     {
         if (errors is not null)
@@ -110,6 +112,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
+
+        Handler?.Invoke();
     }
 
     public void AddErrors(string key, IEnumerable<string> messages)
@@ -137,6 +141,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             {
                 RaisePropertyChanged(HasErrorChangedEventArgs);
             }
+
+            Handler?.Invoke();
         }
     }
 
@@ -155,6 +161,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
+
+        Handler?.Invoke();
     }
 
     public void UpdateErrors(string key, IEnumerable<string> messages)
@@ -198,6 +206,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
+
+        Handler?.Invoke();
     }
 
     public void ClearErrors(string key)
@@ -227,6 +237,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
+
+        Handler?.Invoke();
     }
 
     public void ClearAllErrors()
@@ -249,5 +261,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         {
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
+
+        Handler?.Invoke();
     }
 }
