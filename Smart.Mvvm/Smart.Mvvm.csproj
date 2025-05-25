@@ -15,7 +15,7 @@
   <Target Name="PackBuildOutputs" DependsOnTargets="SatelliteDllsProjectOutputGroup;DebugSymbolsProjectOutputGroup">
     <ItemGroup>
       <TfmSpecificPackageFile Include="..\Smart.Mvvm.props" PackagePath="build" />
-      <TfmSpecificPackageFile Include="$(OutputPath)\Smart.Mvvm.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+      <TfmSpecificPackageFile Include="..\Smart.Mvvm.Generator\bin\$(Configuration)\netstandard2.0\Smart.Mvvm.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
       <TfmSpecificPackageFile Include="$(PKGSourceGenerateHelper)\lib\netstandard2.0\SourceGenerateHelper.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
   </Target>
@@ -29,10 +29,6 @@
 
   <ItemGroup>
     <PackageReference Include="SourceGenerateHelper" Version="1.2.1" GeneratePathProperty="true" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Smart.Mvvm.Generator\Smart.Mvvm.Generator.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

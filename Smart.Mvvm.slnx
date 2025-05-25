@@ -14,5 +14,7 @@
   </Folder>
   <Project Path="Smart.Mvvm.Generator/Smart.Mvvm.Generator.csproj" />
   <Project Path="Smart.Mvvm.Tests/Smart.Mvvm.Tests.csproj" />
-  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj" />
+  <Project Path="Smart.Mvvm/Smart.Mvvm.csproj">
+    <BuildDependency Project="Smart.Mvvm.Generator/Smart.Mvvm.Generator.csproj" />
+  </Project>
 </Solution>
