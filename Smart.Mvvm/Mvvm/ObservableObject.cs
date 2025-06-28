@@ -1,6 +1,7 @@
 namespace Smart.Mvvm;
 
 using System.ComponentModel;
+using System.Diagnostics;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {
@@ -20,4 +21,13 @@ public abstract class ObservableObject : INotifyPropertyChanged
         RaisePropertyChanged(new PropertyChangedEventArgs(propertyName));
     }
 #pragma warning restore CA1030
+
+    [Conditional("DEBUG")]
+    public void DumpHandlers()
+    {
+        foreach (var action in PropertyChanged?.GetInvocationList() ?? [])
+        {
+            Debug.WriteLine($"Target=[{action.Target}], Handler=[{action.Method}]");
+        }
+    }
 }
