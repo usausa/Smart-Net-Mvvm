@@ -23,7 +23,7 @@ public abstract class ObservableObject : INotifyPropertyChanged
 #pragma warning restore CA1030
 
     [Conditional("DEBUG")]
-    public void DumpHandlers()
+    public void DumpObservers()
     {
         foreach (var action in PropertyChanged?.GetInvocationList() ?? [])
         {
