@@ -5,13 +5,11 @@ using System.ComponentModel;
 using Smart.Mvvm;
 using Smart.Mvvm.Messaging;
 
-#pragma warning disable IDE0032
-// ReSharper disable ReplaceWithFieldKeyword
 public abstract class ViewModelBase : ObservableObject, IDisposable
 {
     private static readonly PropertyChangedEventArgs ErrorsChangedEventArgs = new(nameof(Errors));
 
-    private static IViewModelOptions DefaultOptions { get; } = new ViewModelOptions();
+    private static readonly ViewModelOptions DefaultOptions = new();
 
     private Disposables? disposables;
 
