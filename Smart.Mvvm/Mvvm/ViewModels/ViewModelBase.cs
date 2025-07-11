@@ -11,6 +11,8 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
 {
     private static readonly PropertyChangedEventArgs ErrorsChangedEventArgs = new(nameof(Errors));
 
+    private static IViewModelOptions DefaultOptions { get; } = new ViewModelOptions();
+
     private Disposables? disposables;
 
     // ------------------------------------------------------------
@@ -41,25 +43,11 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     // Constructor
     // ------------------------------------------------------------
 
-    protected ViewModelBase()
-        : this(Smart.Mvvm.ViewModels.BusyState.Default, Smart.Mvvm.Messaging.Messenger.Default)
+    protected ViewModelBase(IViewModelOptions? options = null)
     {
-    }
-
-    protected ViewModelBase(IBusyState busyState)
-        : this(busyState, Smart.Mvvm.Messaging.Messenger.Default)
-    {
-    }
-
-    protected ViewModelBase(IMessenger messenger)
-        : this(Smart.Mvvm.ViewModels.BusyState.Default, messenger)
-    {
-    }
-
-    protected ViewModelBase(IBusyState busyState, IMessenger messenger)
-    {
-        BusyState = busyState;
-        Messenger = messenger;
+        options ??= DefaultOptions;
+        BusyState = options.BusyState;
+        Messenger = options.Messenger;
         Errors.Handler = OnErrorChanged;
     }
 
