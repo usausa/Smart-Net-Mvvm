@@ -4,13 +4,13 @@
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
     <File Path="Analyzers.ruleset" />
+    <File Path="CodeCoverage.runsettings" />
     <File Path="Smart.Mvvm.props" />
     <File Path="Smart.Mvvm.sln.DotSettings" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
     <File Path="LICENSE" />
     <File Path="README.md" />
-    <File Path="test.runsettings" />
   </Folder>
   <Project Path="Smart.Mvvm.Generator/Smart.Mvvm.Generator.csproj" />
   <Project Path="Smart.Mvvm.Tests/Smart.Mvvm.Tests.csproj" />
