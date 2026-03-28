@@ -5,6 +5,7 @@ using System.Diagnostics;
 
 using Smart.Mvvm.Internal;
 
+#pragma warning disable IDE0032
 [DebuggerDisplay("Reference = {" + nameof(PropertyChangedReferenceCount) + "}, HasError = {" + nameof(HasError) + "}")]
 public sealed class ErrorInfo : ObservableObject, IDisposable
 {
@@ -87,7 +88,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
     private PooledList<string> PrepareList(string key)
     {
-        errors ??= new Dictionary<string, PooledList<string>>();
+        errors ??= [];
 
         if (!errors.TryGetValue(key, out var values))
         {
@@ -265,3 +266,4 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         Handler?.Invoke();
     }
 }
+#pragma warning restore IDE0032

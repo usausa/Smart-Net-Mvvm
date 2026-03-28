@@ -82,7 +82,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
             ? string.Empty
             : containingType.ContainingNamespace.ToDisplayString();
-        var options = GetGeneratorOptions(containingType);
+        var (isReactive, isViewModel) = GetGeneratorOptions(containingType);
         var getterAccessibility = GetMethodAccessibility(symbol.GetMethod, symbol.DeclaredAccessibility);
         var setterAccessibility = GetMethodAccessibility(symbol.SetMethod, symbol.DeclaredAccessibility);
         var notifyAlso = GetNotifyAlsoPropertyNames(symbol);
@@ -92,8 +92,8 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             containingType.GetClassName(),
             containingType.IsValueType,
             containingType.IsSealed,
-            options.IsReactive,
-            options.IsViewModel,
+            isReactive,
+            isViewModel,
             symbol.DeclaredAccessibility,
             symbol.Type.ToDisplayString(),
             symbol.Name,

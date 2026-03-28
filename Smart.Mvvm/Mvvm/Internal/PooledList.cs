@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Collections;
 using System.Runtime.CompilerServices;
 
+#pragma warning disable IDE0032
 public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
 {
     private const int DefaultCapacity = 16;
@@ -107,7 +108,7 @@ public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
             current = default;
         }
 
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
 
@@ -131,8 +132,9 @@ public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
             current = default;
         }
 
-        public T Current => current!;
+        public readonly T Current => current!;
 
-        object? IEnumerator.Current => current;
+        readonly object? IEnumerator.Current => current;
     }
 }
+#pragma warning restore IDE0032
