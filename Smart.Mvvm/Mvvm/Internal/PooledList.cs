@@ -2,8 +2,8 @@ namespace Smart.Mvvm.Internal;
 
 using System.Buffers;
 using System.Collections;
-using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 #pragma warning disable IDE0032
 public sealed class PooledList<T> : IReadOnlyList<T>, IDisposable
