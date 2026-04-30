@@ -5,6 +5,8 @@ using System.Diagnostics;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {
+    private static readonly PropertyChangedEventArgs EmptyPropertyChangedEventArgs = new(string.Empty);
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -18,7 +20,7 @@ public abstract class ObservableObject : INotifyPropertyChanged
 
     protected void RaisePropertyChanged(string? propertyName)
     {
-        RaisePropertyChanged(new PropertyChangedEventArgs(propertyName));
+        RaisePropertyChanged(String.IsNullOrEmpty(propertyName) ? EmptyPropertyChangedEventArgs : new PropertyChangedEventArgs(propertyName));
     }
 #pragma warning restore CA1030
 

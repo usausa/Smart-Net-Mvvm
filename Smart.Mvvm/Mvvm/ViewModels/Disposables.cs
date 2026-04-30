@@ -15,15 +15,16 @@ public sealed class Disposables : IDisposable
 
     public void Dispose()
     {
-        if (disposables is not null)
+        var localDisposables = disposables;
+        if (localDisposables is not null)
         {
             // ReSharper disable once ForCanBeConvertedToForeach
-            for (var i = 0; i < disposables.Count; i++)
+            for (var i = 0; i < localDisposables.Count; i++)
             {
-                disposables[i].Dispose();
+                localDisposables[i].Dispose();
             }
 
-            disposables.Dispose();
+            localDisposables.Dispose();
             disposables = null;
         }
     }

@@ -6,6 +6,8 @@ using System.Diagnostics;
 [DebuggerDisplay("Reference = {" + nameof(ReferenceCount) + "}")]
 public sealed class Messenger : IMessenger
 {
+    private static readonly MessengerEventArgs EmptyMessageEventArgs = new(string.Empty, typeof(object), null);
+
     [EditorBrowsable(EditorBrowsableState.Never)]
     public event EventHandler<MessengerEventArgs>? Received;
 
@@ -15,7 +17,7 @@ public sealed class Messenger : IMessenger
 
     public void Send(string label)
     {
-        Received?.Invoke(this, new MessengerEventArgs(label, typeof(object), null));
+        Received?.Invoke(this, String.IsNullOrEmpty(label) ? EmptyMessageEventArgs : new MessengerEventArgs(label, typeof(object), null));
     }
 
     public void Send<T>(T message)
