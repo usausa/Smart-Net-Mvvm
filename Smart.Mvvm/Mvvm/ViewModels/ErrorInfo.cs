@@ -2,6 +2,7 @@ namespace Smart.Mvvm.ViewModels;
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using Smart.Mvvm.Internal;
 
@@ -86,6 +87,12 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void NotifyHandler()
+    {
+        Handler?.Invoke();
+    }
+
     private PooledList<string> PrepareList(string key)
     {
         errors ??= [];
@@ -114,7 +121,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
 
-        Handler?.Invoke();
+        NotifyHandler();
     }
 
     public void AddErrors(string key, IEnumerable<string> messages)
@@ -143,7 +150,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
                 RaisePropertyChanged(HasErrorChangedEventArgs);
             }
 
-            Handler?.Invoke();
+            NotifyHandler();
         }
     }
 
@@ -163,7 +170,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
 
-        Handler?.Invoke();
+        NotifyHandler();
     }
 
     public void UpdateErrors(string key, IEnumerable<string> messages)
@@ -208,7 +215,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
 
-        Handler?.Invoke();
+        NotifyHandler();
     }
 
     public void ClearErrors(string key)
@@ -239,7 +246,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
 
-        Handler?.Invoke();
+        NotifyHandler();
     }
 
     public void ClearAllErrors()
@@ -263,7 +270,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
             RaisePropertyChanged(HasErrorChangedEventArgs);
         }
 
-        Handler?.Invoke();
+        NotifyHandler();
     }
 }
 #pragma warning restore IDE0032

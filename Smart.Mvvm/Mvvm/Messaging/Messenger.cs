@@ -2,6 +2,7 @@ namespace Smart.Mvvm.Messaging;
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 [DebuggerDisplay("Reference = {" + nameof(ReferenceCount) + "}")]
 public sealed class Messenger : IMessenger
@@ -15,16 +16,19 @@ public sealed class Messenger : IMessenger
 
     private int ReferenceCount => Received?.GetInvocationList().Length ?? 0;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send(string label)
     {
         Received?.Invoke(this, String.IsNullOrEmpty(label) ? EmptyMessageEventArgs : new MessengerEventArgs(label, typeof(object), null));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send<T>(T message)
     {
         Received?.Invoke(this, new MessengerEventArgs(string.Empty, typeof(T), message));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send<T>(string label, T parameter)
     {
         Received?.Invoke(this, new MessengerEventArgs(label, typeof(T), parameter));

@@ -7,7 +7,7 @@ using Smart.Mvvm.Internal;
 [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
 public sealed class Disposables : IDisposable
 {
-    private const int DefaultCapacity = 32;
+    private const int DefaultCapacity = 16;
 
     private PooledList<IDisposable>? disposables;
 
