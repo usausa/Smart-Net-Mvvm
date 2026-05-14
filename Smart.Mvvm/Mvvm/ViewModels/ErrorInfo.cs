@@ -99,7 +99,9 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
         if (!errors.TryGetValue(key, out var values))
         {
+#pragma warning disable IDE0028
             values = new PooledList<string>(DefaultCapacityPerKey);
+#pragma warning restore IDE0028
             errors.Add(key, values);
         }
 

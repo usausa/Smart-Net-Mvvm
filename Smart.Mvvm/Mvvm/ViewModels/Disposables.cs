@@ -31,7 +31,9 @@ public sealed class Disposables : IDisposable
 
     public void Add(IDisposable disposable)
     {
+#pragma warning disable IDE0028
         disposables ??= new PooledList<IDisposable>(DefaultCapacity);
+#pragma warning restore IDE0028
         disposables.Add(disposable);
     }
 }
