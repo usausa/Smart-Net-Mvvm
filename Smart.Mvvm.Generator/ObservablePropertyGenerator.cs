@@ -252,7 +252,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         // event args
         var names = properties
             .Select(static x => x.PropertyName)
-            .Concat(properties.SelectMany(static x => x.NotifyAlso.ToArray()))
+            .Concat(properties.SelectMany(static x => x.NotifyAlso.AsArray()))
             .Distinct()
             .OrderBy(static x => x);
         foreach (var name in names)
@@ -320,7 +320,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 .Indent()
                 .Append("field = value;")
                 .NewLine();
-            foreach (var name in new[] { property.PropertyName }.Concat(property.NotifyAlso.ToArray()).Distinct())
+            foreach (var name in new[] { property.PropertyName }.Concat(property.NotifyAlso.AsArray()).Distinct())
             {
                 builder
                     .Indent()
