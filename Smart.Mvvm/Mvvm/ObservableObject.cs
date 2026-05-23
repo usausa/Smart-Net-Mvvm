@@ -2,6 +2,7 @@ namespace Smart.Mvvm;
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {
@@ -25,6 +26,7 @@ public abstract class ObservableObject : INotifyPropertyChanged
 #pragma warning restore CA1030
 
     [Conditional("DEBUG")]
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "DEBUG only. Delegate.Method is used for diagnostic output and is not required in production.")]
     public void DumpObservers()
     {
         foreach (var action in PropertyChanged?.GetInvocationList() ?? [])
