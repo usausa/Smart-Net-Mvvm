@@ -21,7 +21,7 @@ public sealed class DefaultResolveProvider : IServiceProvider
         defaultResolver = resolver;
     }
 
-    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The default resolver can be replaced via SetResolver with an AOT-compatible implementation.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "The default resolver can be replaced via SetResolver with an AOT-compatible implementation.")]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "The default resolver can be replaced via SetResolver with an AOT-compatible implementation.")]
     public object? GetService(Type serviceType) => defaultResolver(serviceType);
 }
