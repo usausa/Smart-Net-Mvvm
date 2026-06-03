@@ -58,25 +58,25 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var syntax = (PropertyDeclarationSyntax)context.TargetNode;
         if (context.SemanticModel.GetDeclaredSymbol(syntax) is not { } symbol)
         {
-            return Results.Error<PropertyModel>(null);
+            return Results.Error<PropertyModel>([]);
         }
 
         // Validate property definition
         if (!symbol.IsPartialDefinition)
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name));
+            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name)]);
         }
 
         if (symbol.SetMethod is null)
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name));
+            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name)]);
         }
 
         // Validate type definition
         var containingType = symbol.ContainingType;
         if (!IsImplementObservableObject(containingType))
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name));
+            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name)]);
         }
 
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
@@ -252,7 +252,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         // event args
         var names = properties
             .Select(static x => x.PropertyName)
-            .Concat(properties.SelectMany(static x => x.NotifyAlso.AsArray()))
+            .Concat(properties.SelectMany(static x => x.NotifyAlso))
             .Distinct()
             .OrderBy(static x => x);
         foreach (var name in names)
@@ -320,7 +320,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 .Indent()
                 .Append("field = value;")
                 .NewLine();
-            foreach (var name in new[] { property.PropertyName }.Concat(property.NotifyAlso.AsArray()).Distinct())
+            foreach (var name in new[] { property.PropertyName }.Concat(property.NotifyAlso).Distinct())
             {
                 builder
                     .Indent()
