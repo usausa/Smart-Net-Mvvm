@@ -58,25 +58,25 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var syntax = (PropertyDeclarationSyntax)context.TargetNode;
         if (context.SemanticModel.GetDeclaredSymbol(syntax) is not { } symbol)
         {
-            return Results.Error<PropertyModel>([]);
+            return Results.Errors<PropertyModel>();
         }
 
         // Validate property definition
         if (!symbol.IsPartialDefinition)
         {
-            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name)]);
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name));
         }
 
         if (symbol.SetMethod is null)
         {
-            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name)]);
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name));
         }
 
         // Validate type definition
         var containingType = symbol.ContainingType;
         if (!IsImplementObservableObject(containingType))
         {
-            return Results.Error<PropertyModel>([new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name)]);
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name));
         }
 
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
