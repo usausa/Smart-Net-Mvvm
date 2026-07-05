@@ -93,6 +93,17 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         Handler?.Invoke();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void UpdateHasError()
+    {
+        var previousError = hasError;
+        hasError = (errors is not null) && (errors.Count > 0);
+        if (previousError != hasError)
+        {
+            RaisePropertyChanged(HasErrorChangedEventArgs);
+        }
+    }
+
     private PooledList<string> PrepareList(string key)
     {
         errors ??= [];
@@ -108,6 +119,14 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         return values;
     }
 
+    private void RemoveList(string key)
+    {
+        if ((errors is not null) && errors.Remove(key, out var values))
+        {
+            values.Dispose();
+        }
+    }
+
     public void AddError(string key, string message)
     {
         var values = PrepareList(key);
@@ -116,12 +135,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
         RaisePropertyChanged(ItemsChangedEventArgs);
 
-        var previousError = hasError;
-        hasError = true;
-        if (previousError != hasError)
-        {
-            RaisePropertyChanged(HasErrorChangedEventArgs);
-        }
+        UpdateHasError();
 
         NotifyHandler();
     }
@@ -129,28 +143,18 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
     public void AddErrors(string key, IEnumerable<string> messages)
     {
         var values = default(PooledList<string>);
-        var added = false;
         foreach (var message in messages)
         {
-            if (values is null)
-            {
-                values = PrepareList(key);
-                added = true;
-            }
+            values ??= PrepareList(key);
 
             values.Add(message);
         }
 
-        if (added)
+        if (values is not null)
         {
             RaisePropertyChanged(ItemsChangedEventArgs);
 
-            var previousError = hasError;
-            hasError = true;
-            if (previousError != hasError)
-            {
-                RaisePropertyChanged(HasErrorChangedEventArgs);
-            }
+            UpdateHasError();
 
             NotifyHandler();
         }
@@ -165,12 +169,7 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
         RaisePropertyChanged(ItemsChangedEventArgs);
 
-        var previousError = hasError;
-        hasError = true;
-        if (previousError != hasError)
-        {
-            RaisePropertyChanged(HasErrorChangedEventArgs);
-        }
+        UpdateHasError();
 
         NotifyHandler();
     }
@@ -178,99 +177,62 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
     public void UpdateErrors(string key, IEnumerable<string> messages)
     {
         var values = default(PooledList<string>);
-        var errorExist = false;
         foreach (var message in messages)
         {
             if (values is null)
             {
                 values = PrepareList(key);
                 values.Clear();
-                errorExist = true;
             }
 
             values.Add(message);
         }
 
-        if (!errorExist && (errors is not null))
+        if (values is null)
         {
-            if (errors.TryGetValue(key, out values))
-            {
-                values.Clear();
-            }
-
-            foreach (var kvp in errors)
-            {
-                if (kvp.Value.Count > 0)
-                {
-                    errorExist = true;
-                    break;
-                }
-            }
+            RemoveList(key);
         }
 
         RaisePropertyChanged(ItemsChangedEventArgs);
 
-        var previousError = hasError;
-        hasError = errorExist;
-        if (previousError != hasError)
-        {
-            RaisePropertyChanged(HasErrorChangedEventArgs);
-        }
+        UpdateHasError();
 
         NotifyHandler();
     }
 
     public void ClearErrors(string key)
     {
-        if ((errors is null) || !errors.TryGetValue(key, out var values))
+        if ((errors is null) || !errors.Remove(key, out var values))
         {
             return;
         }
 
-        values.Clear();
-
-        var errorExist = false;
-        foreach (var kvp in errors)
-        {
-            if (kvp.Value.Count > 0)
-            {
-                errorExist = true;
-                break;
-            }
-        }
+        values.Dispose();
 
         RaisePropertyChanged(ItemsChangedEventArgs);
 
-        var previousError = hasError;
-        hasError = errorExist;
-        if (previousError != hasError)
-        {
-            RaisePropertyChanged(HasErrorChangedEventArgs);
-        }
+        UpdateHasError();
 
         NotifyHandler();
     }
 
     public void ClearAllErrors()
     {
-        if (errors is null)
+        if ((errors is null) || (errors.Count == 0))
         {
             return;
         }
 
         foreach (var kvp in errors)
         {
-            kvp.Value.Clear();
+            kvp.Value.Dispose();
         }
+
+        errors.Clear();
 
         RaisePropertyChanged(ItemsChangedEventArgs);
 
-        var previousError = hasError;
-        hasError = false;
-        if (previousError != hasError)
-        {
-            RaisePropertyChanged(HasErrorChangedEventArgs);
-        }
+        UpdateHasError();
 
         NotifyHandler();
     }

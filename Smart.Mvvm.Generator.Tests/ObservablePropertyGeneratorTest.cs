@@ -177,6 +177,109 @@ public class ObservablePropertyGeneratorTest
         Assert.Contains("__FullNameChangedEventArgs", generated, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void NotifyAlsoNonIdentifierStringGeneratesValidCode()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public partial class MyViewModel : ObservableObject
+            {
+                [ObservableProperty(NotifyAlso = ["Item[]"])]
+                public partial string Name { get; set; }
+            }
+            """;
+
+        var generated = GeneratorTestHelper.GetGeneratedSource(source);
+        var diagnostics = GeneratorTestHelper.GetDiagnosticsAll(source);
+
+        Assert.Contains("new(\"Item[]\")", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void NotifyAlsoStringWithQuoteIsEscaped()
+    {
+        const string source =
+            """"
+            using Smart.Mvvm;
+
+            public partial class MyViewModel : ObservableObject
+            {
+                [ObservableProperty(NotifyAlso = ["A\"B"])]
+                public partial string Name { get; set; }
+            }
+            """";
+
+        var generated = GeneratorTestHelper.GetGeneratedSource(source);
+        var diagnostics = GeneratorTestHelper.GetDiagnosticsAll(source);
+
+        Assert.Contains("new(\"A\\\"B\")", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    //-----------------------------------------------------------------------
+    // Nested type
+    //-----------------------------------------------------------------------
+
+    [Fact]
+    public void NestedTypeGeneratesNestedPartialDeclarations()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public partial class Outer
+            {
+                public partial class Inner : ObservableObject
+                {
+                    [ObservableProperty]
+                    public partial string Name { get; set; }
+                }
+            }
+            """;
+
+        var generated = GeneratorTestHelper.GetGeneratedSource(source);
+        var diagnostics = GeneratorTestHelper.GetDiagnosticsAll(source);
+
+        Assert.Contains("partial class Outer", generated, StringComparison.Ordinal);
+        Assert.Contains("partial class Inner", generated, StringComparison.Ordinal);
+        Assert.Contains("partial string Name", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void SameNameNestedTypesInDifferentOuterTypesDoNotCollide()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public partial class OuterA
+            {
+                public partial class Inner : ObservableObject
+                {
+                    [ObservableProperty]
+                    public partial string Value { get; set; }
+                }
+            }
+
+            public partial class OuterB
+            {
+                public partial class Inner : ObservableObject
+                {
+                    [ObservableProperty]
+                    public partial string Value { get; set; }
+                }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnosticsAll(source);
+
+        Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+    }
+
     //-----------------------------------------------------------------------
     // ObservableGeneratorOption
     //-----------------------------------------------------------------------
@@ -444,6 +547,92 @@ public class ObservablePropertyGeneratorTest
         var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
 
         Assert.Contains(diagnostics, d => d.Id == "SMV0003");
+    }
+
+    [Fact]
+    public void Smv0004NonPartialContainingTypeEmitsDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public class Outer
+            {
+                public partial class Inner : ObservableObject
+                {
+                    [ObservableProperty]
+                    public partial string Name { get; set; }
+                }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "SMV0004");
+    }
+
+    [Fact]
+    public void Smv0004AllPartialContainingTypesDoesNotEmitDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public partial class Outer
+            {
+                public partial class Inner : ObservableObject
+                {
+                    [ObservableProperty]
+                    public partial string Name { get; set; }
+                }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == "SMV0004");
+    }
+
+    [Fact]
+    public void Smv0005ViewModelOptionWithoutReactiveEmitsDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+            using Smart.Mvvm.ViewModels;
+
+            [ObservableGeneratorOption(ViewModel = true)]
+            public sealed partial class MyVm : ViewModelBase
+            {
+                [ObservableProperty]
+                public partial string Title { get; set; }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "SMV0005");
+    }
+
+    [Fact]
+    public void Smv0005ViewModelOptionWithReactiveDoesNotEmitDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+            using Smart.Mvvm.ViewModels;
+
+            [ObservableGeneratorOption(Reactive = true, ViewModel = true)]
+            public sealed partial class MyVm : ViewModelBase
+            {
+                [ObservableProperty]
+                public partial string Title { get; set; }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == "SMV0005");
     }
 
     //-----------------------------------------------------------------------

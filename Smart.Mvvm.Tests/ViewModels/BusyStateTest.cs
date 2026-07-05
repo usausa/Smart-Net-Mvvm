@@ -199,4 +199,34 @@ public sealed class BusyStateTest
 
         Assert.False(state.IsBusy);
     }
+
+    [Fact]
+    public void ReleaseBelowZeroThenRequireSetsIsBusyTrue()
+    {
+        var state = new BusyState();
+
+        state.Release();
+        state.Require();
+
+        Assert.True(state.IsBusy);
+    }
+
+    [Fact]
+    public void ReleaseWhenNotBusyDoesNotFirePropertyChanged()
+    {
+        var state = new BusyState();
+
+        var fireCount = 0;
+        state.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(IBusyState.IsBusy))
+            {
+                fireCount++;
+            }
+        };
+
+        state.Release();
+
+        Assert.Equal(0, fireCount);
+    }
 }

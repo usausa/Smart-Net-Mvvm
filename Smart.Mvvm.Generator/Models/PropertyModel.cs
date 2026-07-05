@@ -6,8 +6,8 @@ using SourceGenerateHelper;
 
 internal sealed record PropertyModel(
     string Namespace,
-    string ClassName,
-    bool IsValueType,
+    string TypeKey,
+    EquatableArray<string> ContainingTypes,
     bool IsSealed,
     bool IsReactive,
     bool IsViewModel,

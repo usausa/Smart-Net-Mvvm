@@ -403,4 +403,70 @@ public class ErrorInfoTest
 
         Assert.True(fired);
     }
+
+    //------------------------------------------------------------
+    // Key lifecycle
+    //------------------------------------------------------------
+
+    [Fact]
+    public void ClearErrorsRemovesKeyFromGetKeys()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err1");
+        info.AddError("Age", "err2");
+
+        info.ClearErrors("Name");
+
+        Assert.Equal(["Age"], info.GetKeys());
+    }
+
+    [Fact]
+    public void ClearAllErrorsRemovesAllKeysFromGetKeys()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err1");
+        info.AddError("Age", "err2");
+
+        info.ClearAllErrors();
+
+        Assert.Empty(info.GetKeys());
+    }
+
+    [Fact]
+    public void UpdateErrorsEmptySequenceRemovesKeyFromGetKeys()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err1");
+        info.AddError("Age", "err2");
+
+        info.UpdateErrors("Name", []);
+
+        Assert.Equal(["Age"], info.GetKeys());
+    }
+
+    [Fact]
+    public void AddErrorAfterClearAllErrorsSetsHasError()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err");
+        info.ClearAllErrors();
+
+        info.AddError("Name", "again");
+
+        Assert.True(info.HasError);
+        Assert.Equal("again", info["Name"]);
+        Assert.Single(info.GetErrors("Name"));
+    }
+
+    [Fact]
+    public void AddErrorAfterClearErrorsReusesKey()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err");
+        info.ClearErrors("Name");
+
+        info.AddError("Name", "again");
+
+        Assert.Equal(["again"], info.GetErrors("Name"));
+    }
 }

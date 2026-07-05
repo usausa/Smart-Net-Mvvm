@@ -54,16 +54,6 @@ public abstract class ViewModelBase : ObservableObject, IDisposable
     }
 
 #pragma warning disable CA1063
-    ~ViewModelBase()
-    {
-        if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)
-        {
-            Dispose(false);
-        }
-    }
-#pragma warning restore CA1063
-
-#pragma warning disable CA1063
     public void Dispose()
     {
         if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)

@@ -87,10 +87,50 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var setterAccessibility = GetMethodAccessibility(symbol.SetMethod, symbol.DeclaredAccessibility);
         var notifyAlso = GetNotifyAlsoPropertyNames(symbol);
 
+        // Build the containing type hierarchy
+        string[] containingTypes;
+        string typeKey;
+        if (containingType.ContainingType is null)
+        {
+            if (!IsPartialType(containingType))
+            {
+                return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.GetLocation(), containingType.Name));
+            }
+
+            containingTypes = [$"{GetTypeKeyword(containingType)} {containingType.GetClassName()}"];
+            typeKey = containingType.MetadataName;
+        }
+        else
+        {
+            // Nested type
+            var typeHierarchy = new List<INamedTypeSymbol>();
+            for (var type = containingType; type is not null; type = type.ContainingType)
+            {
+                typeHierarchy.Add(type);
+            }
+            typeHierarchy.Reverse();
+
+            containingTypes = new string[typeHierarchy.Count];
+            var keyParts = new string[typeHierarchy.Count];
+            for (var i = 0; i < typeHierarchy.Count; i++)
+            {
+                var type = typeHierarchy[i];
+                if (!IsPartialType(type))
+                {
+                    return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.GetLocation(), type.Name));
+                }
+
+                containingTypes[i] = $"{GetTypeKeyword(type)} {type.GetClassName()}";
+                keyParts[i] = type.MetadataName;
+            }
+
+            typeKey = String.Join(".", keyParts);
+        }
+
         return Results.Success(new PropertyModel(
             ns,
-            containingType.GetClassName(),
-            containingType.IsValueType,
+            typeKey,
+            new EquatableArray<string>(containingTypes),
             containingType.IsSealed,
             isReactive,
             isViewModel,
@@ -100,7 +140,31 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             symbol.GetMethod is not null,
             getterAccessibility,
             setterAccessibility,
-            new EquatableArray<string>(notifyAlso.ToArray())));
+            new EquatableArray<string>(notifyAlso)));
+    }
+
+    private static bool IsPartialType(INamedTypeSymbol symbol)
+    {
+        foreach (var reference in symbol.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is TypeDeclarationSyntax declaration &&
+                !declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string GetTypeKeyword(INamedTypeSymbol symbol)
+    {
+        if (symbol.IsRecord)
+        {
+            return symbol.IsValueType ? "record struct" : "record";
+        }
+
+        return symbol.IsValueType ? "struct" : "class";
     }
 
     private static bool IsImplementObservableObject(INamedTypeSymbol typeSymbol)
@@ -200,14 +264,22 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
 
         var builder = new SourceBuilder();
-        foreach (var group in properties.SelectValue().GroupBy(static x => new { x.Namespace, x.ClassName }))
+        foreach (var group in properties.SelectValue().GroupBy(static x => new { x.Namespace, x.TypeKey }))
         {
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            builder.Clear();
-            BuildSource(builder, group.ToList());
+            var models = group.ToList();
 
-            var filename = MakeFilename(group.Key.Namespace, group.Key.ClassName);
+            // The ViewModel option only produces Subscribe methods, which require the Reactive option
+            if (models[0].IsViewModel && !models[0].IsReactive)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ViewModelOptionRequiresReactive, null, group.Key.TypeKey));
+            }
+
+            builder.Clear();
+            BuildSource(builder, models);
+
+            var filename = MakeFilename(group.Key.Namespace, group.Key.TypeKey);
             var source = builder.ToString();
             context.AddSource(filename, SourceText.From(source, Encoding.UTF8));
         }
@@ -216,8 +288,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
     {
         var ns = properties[0].Namespace;
-        var className = properties[0].ClassName;
-        var isValueType = properties[0].IsValueType;
+        var containingTypes = properties[0].ContainingTypes;
         var isSealed = properties[0].IsSealed;
         var isReactive = properties[0].IsReactive;
         var isViewModel = properties[0].IsViewModel;
@@ -240,21 +311,25 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             builder.NewLine();
         }
 
-        // class
-        builder
-            .Indent()
-            .Append("partial ")
-            .Append(isValueType ? "struct " : "class ")
-            .Append(className)
-            .NewLine();
-        builder.BeginScope();
+        // type (including the containing type hierarchy for nested types)
+        foreach (var containingType in containingTypes)
+        {
+            builder
+                .Indent()
+                .Append("partial ")
+                .Append(containingType)
+                .NewLine();
+            builder.BeginScope();
+        }
 
         // event args
         var names = properties
             .Select(static x => x.PropertyName)
             .Concat(properties.SelectMany(static x => x.NotifyAlso))
             .Distinct()
-            .OrderBy(static x => x);
+            .OrderBy(static x => x, StringComparer.Ordinal)
+            .ToList();
+        var eventArgsFields = BuildEventArgsFieldNames(names);
         foreach (var name in names)
         {
             builder
@@ -264,10 +339,10 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             builder
                 .Indent()
                 .Append("private static readonly global::System.ComponentModel.PropertyChangedEventArgs ")
-                .Append(GetEventArgsPropertyName(name))
-                .Append(" = new(\"")
-                .Append(name)
-                .Append("\");")
+                .Append(GetEventArgsField(eventArgsFields, name))
+                .Append(" = new(")
+                .Append(SymbolDisplay.FormatLiteral(name, true))
+                .Append(");")
                 .NewLine();
         }
 
@@ -326,7 +401,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                     .Indent()
                     .Append(TriggerMethodName)
                     .Append('(')
-                    .Append(GetEventArgsPropertyName(name))
+                    .Append(GetEventArgsField(eventArgsFields, name))
                     .Append(");")
                     .NewLine();
             }
@@ -421,29 +496,60 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             }
         }
 
-        builder.EndScope();
+        // close the type hierarchy
+        for (var i = 0; i < containingTypes.Count; i++)
+        {
+            builder.EndScope();
+        }
     }
 
     // ------------------------------------------------------------
     // Helper
     // ------------------------------------------------------------
 
-    private static string GetEventArgsPropertyName(string name) =>
-        $"__{name}ChangedEventArgs";
-
-    private static string MakeFilename(string ns, string className)
+    private static Dictionary<string, string>? BuildEventArgsFieldNames(List<string> names)
     {
-        var buffer = new StringBuilder();
-
-        if (!String.IsNullOrEmpty(ns))
+        var requiresFallback = false;
+        foreach (var name in names)
         {
-            buffer.Append(ns.Replace('.', '_'));
-            buffer.Append('_');
+            if (!SyntaxFacts.IsValidIdentifier(name))
+            {
+                requiresFallback = true;
+                break;
+            }
         }
 
-        buffer.Append(className.Replace('<', '[').Replace('>', ']'));
-        buffer.Append(".g.cs");
+        if (!requiresFallback)
+        {
+            return null;
+        }
 
-        return buffer.ToString();
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var sequence = 0;
+
+        foreach (var name in names)
+        {
+            var candidate = SyntaxFacts.IsValidIdentifier(name) ? $"__{name}ChangedEventArgs" : null;
+            if ((candidate is null) || !used.Add(candidate))
+            {
+                do
+                {
+                    candidate = $"__NotifyEventArgs{sequence}";
+                    sequence++;
+                }
+                while (!used.Add(candidate));
+            }
+
+            map.Add(name, candidate);
+        }
+
+        return map;
     }
+
+    private static string GetEventArgsField(Dictionary<string, string>? fieldNames, string name) =>
+        fieldNames is not null ? fieldNames[name] : $"__{name}ChangedEventArgs";
+
+    private static string MakeFilename(string ns, string typeKey) =>
+        String.IsNullOrEmpty(ns) ? $"{typeKey}.g.cs" : $"{ns}.{typeKey}.g.cs";
 }

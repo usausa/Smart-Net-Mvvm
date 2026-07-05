@@ -26,6 +26,11 @@ public class BusyState : ObservableObject, IBusyState
 
     public void Release()
     {
+        if (counter <= 0)
+        {
+            return;
+        }
+
         var current = IsBusy;
         counter--;
         if (current != IsBusy)
