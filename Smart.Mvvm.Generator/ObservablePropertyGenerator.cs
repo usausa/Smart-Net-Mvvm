@@ -41,9 +41,15 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 static (context, _) => GetPropertyModel(context))
             .Collect();
 
-        context.RegisterImplementationSourceOutput(
+        context.RegisterSourceOutput(
             propertyProvider,
-            static (context, provider) => Execute(context, provider));
+            static (context, properties) => ReportDiagnostics(context, properties));
+
+        var types = propertyProvider.SelectMany(static (properties, _) =>
+            properties.SelectValue()
+                .GroupBy(static x => new { x.Namespace, x.TypeKey })
+                .Select(static g => new TypeModel(g.Key.Namespace, g.Key.TypeKey, new EquatableArray<PropertyModel>(g.ToArray()))).ToImmutableArray());
+        context.RegisterImplementationSourceOutput(types, static (context, type) => Execute(context, type));
     }
 
     // ------------------------------------------------------------
@@ -64,19 +70,19 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         // Validate property definition
         if (!symbol.IsPartialDefinition)
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.GetLocation(), symbol.Name));
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.Identifier.GetLocation(), symbol.Name));
         }
 
         if (symbol.SetMethod is null)
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.GetLocation(), symbol.Name));
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.Identifier.GetLocation(), symbol.Name));
         }
 
         // Validate type definition
         var containingType = symbol.ContainingType;
         if (!IsImplementObservableObject(containingType))
         {
-            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.GetLocation(), containingType.Name));
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.Identifier.GetLocation(), containingType.Name));
         }
 
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
@@ -94,7 +100,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         {
             if (!IsPartialType(containingType))
             {
-                return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.GetLocation(), containingType.Name));
+                return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), containingType.Name));
             }
 
             containingTypes = [$"{GetTypeKeyword(containingType)} {containingType.GetClassName()}"];
@@ -117,7 +123,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 var type = typeHierarchy[i];
                 if (!IsPartialType(type))
                 {
-                    return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.GetLocation(), type.Name));
+                    return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), type.Name));
                 }
 
                 containingTypes[i] = $"{GetTypeKeyword(type)} {type.GetClassName()}";
@@ -256,18 +262,15 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     // Generator
     // ------------------------------------------------------------
 
-    private static void Execute(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties)
+    private static void ReportDiagnostics(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties)
     {
         foreach (var info in properties.SelectError())
         {
             context.ReportDiagnostic(info);
         }
 
-        var builder = new SourceBuilder();
         foreach (var group in properties.SelectValue().GroupBy(static x => new { x.Namespace, x.TypeKey }))
         {
-            context.CancellationToken.ThrowIfCancellationRequested();
-
             var models = group.ToList();
 
             // The ViewModel option only produces Subscribe methods, which require the Reactive option
@@ -275,14 +278,19 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ViewModelOptionRequiresReactive, null, group.Key.TypeKey));
             }
-
-            builder.Clear();
-            BuildSource(builder, models);
-
-            var filename = MakeFilename(group.Key.Namespace, group.Key.TypeKey);
-            var source = builder.ToString();
-            context.AddSource(filename, SourceText.From(source, Encoding.UTF8));
         }
+    }
+
+    private static void Execute(SourceProductionContext context, TypeModel model)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        var builder = new SourceBuilder();
+        BuildSource(builder, model.Properties.ToList());
+
+        var filename = MakeFilename(model.Namespace, model.TypeKey);
+        var source = builder.ToString();
+        context.AddSource(filename, SourceText.From(source, Encoding.UTF8));
     }
 
     private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
