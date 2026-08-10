@@ -9,7 +9,7 @@ internal static class Diagnostics
         title: "Invalid property definition",
         messageFormat: "Property must be partial. property=[{0}]",
         category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor PropertySetterRequired { get; } = new(
@@ -17,7 +17,7 @@ internal static class Diagnostics
         title: "Property setter is required",
         messageFormat: "Property setter is required. property=[{0}]",
         category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor InvalidTypeDefinition { get; } = new(
@@ -25,7 +25,7 @@ internal static class Diagnostics
         title: "Invalid type definition",
         messageFormat: "Type must extend ObservableObject. type=[{0}]",
         category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor PartialContainingTypeRequired { get; } = new(
@@ -33,7 +33,7 @@ internal static class Diagnostics
         title: "Partial containing type is required",
         messageFormat: "Containing type must be partial. type=[{0}]",
         category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
     public static DiagnosticDescriptor ViewModelOptionRequiresReactive { get; } = new(
