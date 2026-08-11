@@ -3,12 +3,10 @@ namespace Smart.Mvvm.Generator;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 using Smart.Mvvm.Generator.Models;
 
@@ -288,9 +286,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var builder = new SourceBuilder();
         BuildSource(builder, model.Properties.ToList());
 
-        var filename = MakeFilename(model.Namespace, model.TypeKey);
-        var source = builder.ToString();
-        context.AddSource(filename, SourceText.From(source, Encoding.UTF8));
+        context.AddSource(HintNameBuilder.Build(model.Namespace, model.TypeKey), builder);
     }
 
     private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
@@ -557,7 +553,4 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
     private static string GetEventArgsField(Dictionary<string, string>? fieldNames, string name) =>
         fieldNames is not null ? fieldNames[name] : $"__{name}ChangedEventArgs";
-
-    private static string MakeFilename(string ns, string typeKey) =>
-        String.IsNullOrEmpty(ns) ? $"{typeKey}.g.cs" : $"{ns}.{typeKey}.g.cs";
 }
