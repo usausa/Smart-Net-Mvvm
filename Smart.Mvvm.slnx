@@ -13,7 +13,7 @@
     <File Path="Analyzers.ruleset" />
     <File Path="CLAUDE.md" />
     <File Path="CodeCoverage.runsettings" />
-    <File Path="Smart.Mvvm.props" />
+    <File Path="Smart.Mvvm.targets" />
     <File Path="Smart.Mvvm.sln.DotSettings" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />

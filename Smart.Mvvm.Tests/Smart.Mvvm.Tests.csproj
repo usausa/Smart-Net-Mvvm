@@ -16,7 +16,7 @@
   <PropertyGroup>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
-  <Import Project="..\Smart.Mvvm.props" />
+  <Import Project="..\Smart.Mvvm.targets" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
