@@ -46,7 +46,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var types = propertyProvider.SelectMany(static (properties, _) =>
             properties.SelectValue()
                 .GroupBy(static x => new { x.Namespace, x.TypeKey })
-                .Select(static g => new TypeModel(g.Key.Namespace, g.Key.TypeKey, new EquatableArray<PropertyModel>(g.ToArray()))).ToImmutableArray());
+                .Select(static g => new TypeModel(g.Key.Namespace, g.Key.TypeKey, new EquatableArray<PropertyModel>(g))).ToImmutableArray());
         context.RegisterImplementationSourceOutput(types, static (context, type) => Execute(context, type));
     }
 
