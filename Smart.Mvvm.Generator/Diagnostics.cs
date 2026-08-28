@@ -15,7 +15,7 @@ internal static class Diagnostics
     public static DiagnosticDescriptor PropertySetterRequired { get; } = new(
         id: "SMV0002",
         title: "Property setter is required",
-        messageFormat: "Property setter is required. property=[{0}]",
+        messageFormat: "Property has no setter. property=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -38,8 +38,8 @@ internal static class Diagnostics
 
     public static DiagnosticDescriptor ViewModelOptionRequiresReactive { get; } = new(
         id: "SMV0005",
-        title: "ViewModel option requires Reactive option",
-        messageFormat: "ViewModel option has no effect unless Reactive is also enabled. type=[{0}]",
+        title: "ViewModel option requires Reactive",
+        messageFormat: "ViewModel option has no effect. type=[{0}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);

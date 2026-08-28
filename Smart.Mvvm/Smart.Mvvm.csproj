@@ -16,6 +16,7 @@
     <ItemGroup>
       <TfmSpecificPackageFile Include="..\Smart.Mvvm.Generator\bin\$(Configuration)\netstandard2.0\Smart.Mvvm.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
       <TfmSpecificPackageFile Include="$(PKGSourceGenerateHelper)\lib\netstandard2.0\SourceGenerateHelper.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+      <TfmSpecificPackageFile Include="..\Smart.Mvvm.props" Pack="true" PackagePath="buildTransitive\Usa.Smart.Mvvm.props" Visible="false" />
       <TfmSpecificPackageFile Include="..\Smart.Mvvm.targets" Pack="true" PackagePath="buildTransitive\Usa.Smart.Mvvm.targets" Visible="false" />
     </ItemGroup>
   </Target>
