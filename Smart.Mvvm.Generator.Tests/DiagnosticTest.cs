@@ -1,7 +1,5 @@
 namespace Smart.Mvvm.Generator.Tests;
 
-using Microsoft.CodeAnalysis;
-
 public sealed class DiagnosticTest
 {
     [Fact]
