@@ -151,7 +151,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     {
         foreach (var reference in symbol.DeclaringSyntaxReferences)
         {
-            if (reference.GetSyntax() is TypeDeclarationSyntax declaration &&
+            if ((reference.GetSyntax() is TypeDeclarationSyntax declaration) &&
                 !declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
                 return false;
