@@ -4,9 +4,7 @@ namespace Smart.Mvvm;
 using Smart.Mvvm.ViewModels;
 
 [ObservableGeneratorOption(Reactive = true, ViewModel = true)]
-public abstract class AppViewModel : ViewModelBase
-{
-}
+public abstract class AppViewModel : ViewModelBase;
 
 public sealed partial class ViewModel : AppViewModel
 {
