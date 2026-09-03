@@ -213,7 +213,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             }
         }
 
+#pragma warning disable IDE0028
         return list.ToArray();
+#pragma warning restore IDE0028
     }
 
     private static (bool IsReactive, bool IsViewModel) GetGeneratorOptions(ITypeSymbol typeSymbol)
@@ -284,7 +286,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         context.CancellationToken.ThrowIfCancellationRequested();
 
         var builder = new SourceBuilder();
+#pragma warning disable IDE0028
         BuildSource(builder, model.Properties.ToList());
+#pragma warning restore IDE0028
 
         context.AddSource(HintNameBuilder.Build(model.Namespace, model.TypeKey), builder);
     }
