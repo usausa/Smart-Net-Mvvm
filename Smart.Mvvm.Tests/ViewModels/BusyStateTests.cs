@@ -1,6 +1,6 @@
 namespace Smart.Mvvm.ViewModels;
 
-public sealed class BusyStateTest
+public sealed class BusyStateTests
 {
     //------------------------------------------------------------
     // Require / Release

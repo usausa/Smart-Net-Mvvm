@@ -1,6 +1,6 @@
 namespace Smart.Mvvm.ViewModels;
 
-public class ErrorInfoTest
+public class ErrorInfoTests
 {
     //------------------------------------------------------------
     // AddError

@@ -1,6 +1,6 @@
 namespace Smart.Mvvm.Generator.Tests;
 
-public sealed class DiagnosticTest
+public sealed class DiagnosticTests
 {
     [Fact]
     public void Smv0001NonPartialPropertyEmitsDiagnostic()

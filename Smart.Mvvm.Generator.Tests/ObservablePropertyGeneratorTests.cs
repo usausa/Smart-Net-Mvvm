@@ -2,7 +2,7 @@ namespace Smart.Mvvm.Generator.Tests;
 
 using Microsoft.CodeAnalysis;
 
-public class ObservablePropertyGeneratorTest
+public class ObservablePropertyGeneratorTests
 {
     //-----------------------------------------------------------------------
     // Basic

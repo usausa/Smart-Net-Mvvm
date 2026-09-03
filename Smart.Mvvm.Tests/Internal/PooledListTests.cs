@@ -1,6 +1,6 @@
 namespace Smart.Mvvm.Internal;
 
-public sealed class PooledListTest
+public sealed class PooledListTests
 {
     [Fact]
     public void IndexerReturnsElementWithinCount()

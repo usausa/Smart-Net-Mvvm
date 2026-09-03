@@ -1,6 +1,6 @@
 namespace Smart.Mvvm.Messaging;
 
-public sealed class MessengerTest
+public sealed class MessengerTests
 {
     //------------------------------------------------------------
     // Send

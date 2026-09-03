@@ -1,7 +1,7 @@
 // ReSharper disable StringLiteralTypo
 namespace Smart.Mvvm;
 
-public class BasicTest
+public class BasicTests
 {
     [Fact]
     public void TestBasic()
