@@ -101,18 +101,13 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), containingType.Name));
             }
 
-            containingTypes = [$"{GetTypeKeyword(containingType)} {containingType.GetClassName()}"];
+            containingTypes = [$"{containingType.GetDeclarationKeyword()} {containingType.GetClassName()}"];
             typeKey = containingType.MetadataName;
         }
         else
         {
             // Nested type
-            var typeHierarchy = new List<INamedTypeSymbol>();
-            for (var type = containingType; type is not null; type = type.ContainingType)
-            {
-                typeHierarchy.Add(type);
-            }
-            typeHierarchy.Reverse();
+            List<INamedTypeSymbol> typeHierarchy = [.. containingType.GetContainingTypes(), containingType];
 
             containingTypes = new string[typeHierarchy.Count];
             var keyParts = new string[typeHierarchy.Count];
@@ -124,7 +119,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                     return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), type.Name));
                 }
 
-                containingTypes[i] = $"{GetTypeKeyword(type)} {type.GetClassName()}";
+                containingTypes[i] = $"{type.GetDeclarationKeyword()} {type.GetClassName()}";
                 keyParts[i] = type.MetadataName;
             }
 
@@ -159,16 +154,6 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
 
         return true;
-    }
-
-    private static string GetTypeKeyword(INamedTypeSymbol symbol)
-    {
-        if (symbol.IsRecord)
-        {
-            return symbol.IsValueType ? "record struct" : "record";
-        }
-
-        return symbol.IsValueType ? "struct" : "class";
     }
 
     private static bool IsImplementObservableObject(INamedTypeSymbol typeSymbol)
