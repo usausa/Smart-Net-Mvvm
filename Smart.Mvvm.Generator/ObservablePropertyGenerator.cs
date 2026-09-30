@@ -23,6 +23,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     private const string ViewModelPropertyName = "ViewModel";
 
     private const string ObservableObjectName = "Smart.Mvvm.ObservableObject";
+    private const string ViewModelBaseName = "Smart.Mvvm.ViewModels.ViewModelBase";
     private const string TriggerMethodName = "RaisePropertyChanged";
 
     // ------------------------------------------------------------
@@ -39,14 +40,15 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 static (context, _) => GetPropertyModel(context))
             .Collect();
 
-        context.RegisterSourceOutput(
-            propertyProvider,
-            static (context, properties) => ReportDiagnostics(context, properties));
+        var treeProvider = context.ForAttributeWithMetadataNameSyntaxTrees(
+            AttributeName,
+            static (syntax, _) => IsPropertySyntax(syntax));
 
-        var types = propertyProvider.SelectMany(static (properties, _) =>
-            properties.SelectValue()
-                .GroupBy(static x => new { x.Namespace, x.TypeKey })
-                .Select(static g => new TypeModel(g.Key.Namespace, g.Key.TypeKey, new EquatableArray<PropertyModel>(g))).ToImmutableArray());
+        context.RegisterSourceOutput(
+            propertyProvider.Combine(treeProvider),
+            static (context, provider) => ReportDiagnostics(context, provider.Left, provider.Right));
+
+        var types = propertyProvider.SelectMany(static (properties, _) => SelectTypes(properties));
         context.RegisterImplementationSourceOutput(types, static (context, type) => Execute(context, type));
     }
 
@@ -55,10 +57,15 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
     // ------------------------------------------------------------
 
     private static bool IsPropertySyntax(SyntaxNode syntax) =>
-        syntax is PropertyDeclarationSyntax;
+        syntax is PropertyDeclarationSyntax or IndexerDeclarationSyntax;
 
     private static Result<PropertyModel> GetPropertyModel(GeneratorAttributeSyntaxContext context)
     {
+        if (context.TargetNode is IndexerDeclarationSyntax indexer)
+        {
+            return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, indexer.ThisKeyword.GetLocation(), "this[]"));
+        }
+
         var syntax = (PropertyDeclarationSyntax)context.TargetNode;
         if (context.SemanticModel.GetDeclaredSymbol(syntax) is not { } symbol)
         {
@@ -66,19 +73,34 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         }
 
         // Validate property definition
-        if (!symbol.IsPartialDefinition)
+        if (!symbol.IsPartialDefinition || (symbol.PartialImplementationPart is not null) || symbol.IsStatic)
         {
             return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidPropertyDefinition, syntax.Identifier.GetLocation(), symbol.Name));
         }
 
-        if (symbol.SetMethod is null)
+        string? getter = null;
+        string? setter = null;
+        foreach (var accessor in syntax.AccessorList?.Accessors ?? default)
+        {
+            if (accessor.Keyword.IsKind(SyntaxKind.GetKeyword))
+            {
+                getter = accessor.GetImplementationAccessor();
+            }
+            else if (accessor.Keyword.IsKind(SyntaxKind.SetKeyword) || accessor.Keyword.IsKind(SyntaxKind.InitKeyword))
+            {
+                setter = accessor.GetImplementationAccessor();
+            }
+        }
+
+        if ((symbol.SetMethod is null) || (setter is null))
         {
             return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PropertySetterRequired, syntax.Identifier.GetLocation(), symbol.Name));
         }
 
         // Validate type definition
         var containingType = symbol.ContainingType;
-        if (!IsImplementObservableObject(containingType))
+        var (isObservableObject, isViewModelBase) = GetBaseTypes(containingType);
+        if (!isObservableObject)
         {
             return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.InvalidTypeDefinition, syntax.Identifier.GetLocation(), containingType.Name));
         }
@@ -86,9 +108,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var ns = String.IsNullOrEmpty(containingType.ContainingNamespace.Name)
             ? string.Empty
             : containingType.ContainingNamespace.ToDisplayString();
-        var (isReactive, isViewModel) = GetGeneratorOptions(containingType);
-        var getterAccessibility = GetMethodAccessibility(symbol.GetMethod, symbol.DeclaredAccessibility);
-        var setterAccessibility = GetMethodAccessibility(symbol.SetMethod, symbol.DeclaredAccessibility);
+        var (isReactive, isViewModel, optionOwner, optionLocation) = GetGeneratorOptions(containingType);
         var notifyAlso = GetNotifyAlsoPropertyNames(symbol);
 
         // Build the containing type hierarchy
@@ -96,7 +116,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         string typeKey;
         if (containingType.ContainingType is null)
         {
-            if (!IsPartialType(containingType))
+            if (!IsPartialType(containingType) || containingType.IsFileLocal)
             {
                 return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), containingType.Name));
             }
@@ -114,7 +134,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             for (var i = 0; i < typeHierarchy.Count; i++)
             {
                 var type = typeHierarchy[i];
-                if (!IsPartialType(type))
+                if (!IsPartialType(type) || type.IsFileLocal)
                 {
                     return Results.Error<PropertyModel>(new DiagnosticInfo(Diagnostics.PartialContainingTypeRequired, syntax.Identifier.GetLocation(), type.Name));
                 }
@@ -133,12 +153,16 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             containingType.IsSealed,
             isReactive,
             isViewModel,
-            symbol.DeclaredAccessibility,
-            symbol.Type.ToDisplayString(),
+            isViewModelBase,
+            optionOwner,
+            optionLocation,
+            containingType.ToDisplayString(),
+            containingType.Locations.FirstOrDefault() is { } typeLocation ? LocationInfo.CreateFrom(typeLocation) : null,
+            symbol.GetImplementationSignature(syntax),
+            symbol.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
             symbol.Name,
-            symbol.GetMethod is not null,
-            getterAccessibility,
-            setterAccessibility,
+            getter,
+            setter,
             new EquatableArray<string>(notifyAlso)));
     }
 
@@ -156,20 +180,26 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         return true;
     }
 
-    private static bool IsImplementObservableObject(INamedTypeSymbol typeSymbol)
+    private static (bool IsObservableObject, bool IsViewModelBase) GetBaseTypes(INamedTypeSymbol typeSymbol)
     {
+        var isViewModelBase = false;
         var symbol = typeSymbol.BaseType;
         while (symbol is not null)
         {
-            if (symbol.ToDisplayString() == ObservableObjectName)
+            var name = symbol.ToDisplayString();
+            if (name == ViewModelBaseName)
             {
-                return true;
+                isViewModelBase = true;
+            }
+            else if (name == ObservableObjectName)
+            {
+                return (true, isViewModelBase);
             }
 
             symbol = symbol.BaseType;
         }
 
-        return false;
+        return (false, false);
     }
 
     private static string[] GetNotifyAlsoPropertyNames(IPropertySymbol symbol)
@@ -183,18 +213,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                 continue;
             }
 
-            foreach (var argument in attribute.NamedArguments)
+            if (attribute.TryGetNamedArgument(NotifyAlsoPropertyName, out var names) && names.TryGetValues<string>(out var values))
             {
-                if (argument.Key == NotifyAlsoPropertyName)
-                {
-                    foreach (var value in argument.Value.Values)
-                    {
-                        if (value.Value is string strValue)
-                        {
-                            list.Add(strValue);
-                        }
-                    }
-                }
+                list.AddRange(values);
             }
         }
 
@@ -203,7 +224,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 #pragma warning restore IDE0028
     }
 
-    private static (bool IsReactive, bool IsViewModel) GetGeneratorOptions(ITypeSymbol typeSymbol)
+    private static (bool IsReactive, bool IsViewModel, string Owner, LocationInfo? Location) GetGeneratorOptions(ITypeSymbol typeSymbol)
     {
         var symbol = typeSymbol;
         while (symbol is not null)
@@ -220,51 +241,82 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
                 foreach (var argument in attribute.NamedArguments)
                 {
-                    if (argument.Key == ReactivePropertyName)
+                    if ((argument.Key == ReactivePropertyName) && argument.Value.TryGetValue<bool>(out var reactive))
                     {
-                        isReactive = (bool)argument.Value.Value!;
+                        isReactive = reactive;
                     }
-                    else if (argument.Key == ViewModelPropertyName)
+                    else if ((argument.Key == ViewModelPropertyName) && argument.Value.TryGetValue<bool>(out var viewModel))
                     {
-                        isViewModel = (bool)argument.Value.Value!;
+                        isViewModel = viewModel;
                     }
                 }
 
-                return (isReactive, isViewModel);
+                var location = attribute.ApplicationSyntaxReference?.GetSyntax() is { } node ? LocationInfo.CreateFrom(node) : null;
+                return (isReactive, isViewModel, symbol.ToDisplayString(), location);
             }
 
             symbol = symbol.BaseType;
         }
 
-        return (false, false);
+        return (false, false, string.Empty, null);
     }
 
-    private static Accessibility? GetMethodAccessibility(IMethodSymbol? symbol, Accessibility defaultAccessibility)
-    {
-        return ((symbol is not null) && (symbol.DeclaredAccessibility != defaultAccessibility)) ? symbol.DeclaredAccessibility : null;
-    }
     // ------------------------------------------------------------
     // Generator
     // ------------------------------------------------------------
 
-    private static void ReportDiagnostics(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties)
+    private static void ReportDiagnostics(SourceProductionContext context, ImmutableArray<Result<PropertyModel>> properties, ImmutableArray<SyntaxTree> trees)
     {
-        foreach (var info in properties.SelectError())
-        {
-            context.ReportDiagnostic(info);
-        }
+        var diagnostics = properties.SelectError().ToList();
 
         foreach (var group in properties.SelectValue().GroupBy(static x => new { x.Namespace, x.TypeKey }))
         {
-            var models = group.ToList();
+            var model = group.First();
 
             // The ViewModel option only produces Subscribe methods, which require the Reactive option
-            if (models[0].IsViewModel && !models[0].IsReactive)
+            if (model.IsViewModel && (!model.IsReactive || !model.IsViewModelBase))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.ViewModelOptionRequiresReactive, null, group.Key.TypeKey));
+                diagnostics.Add(model.OptionLocation is not null
+                    ? new DiagnosticInfo(Diagnostics.ViewModelOptionRequiresReactive, model.OptionLocation, model.OptionOwner)
+                    : new DiagnosticInfo(Diagnostics.ViewModelOptionRequiresReactive, model.TypeLocation, model.TypeName));
             }
         }
+
+        context.ReportDiagnostics(diagnostics.Concat(FindHintNameCollisions(properties).Values).Distinct(), trees);
     }
+
+    private static ImmutableArray<TypeModel> SelectTypes(ImmutableArray<Result<PropertyModel>> properties)
+    {
+        var collisions = FindHintNameCollisions(properties);
+        return properties.SelectValue()
+            .GroupBy(static x => new { x.Namespace, x.TypeKey })
+            .Where(x => !collisions.ContainsKey(GetHintName(x.Key.Namespace, x.Key.TypeKey)))
+            .Select(static x => new TypeModel(x.Key.Namespace, x.Key.TypeKey, new EquatableArray<PropertyModel>(x)))
+            .ToImmutableArray();
+    }
+
+    private static Dictionary<string, DiagnosticInfo> FindHintNameCollisions(ImmutableArray<Result<PropertyModel>> properties)
+    {
+        var collisions = new Dictionary<string, DiagnosticInfo>(StringComparer.Ordinal);
+        var firsts = new Dictionary<string, (string HintName, string TypeName)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in properties.SelectValue().OrderBy(static x => GetHintName(x.Namespace, x.TypeKey), StringComparer.Ordinal))
+        {
+            var hintName = GetHintName(property.Namespace, property.TypeKey);
+            if (!firsts.TryGetValue(hintName, out var first))
+            {
+                firsts.Add(hintName, (hintName, property.TypeName));
+            }
+            else if ((first.HintName != hintName) && !collisions.ContainsKey(hintName))
+            {
+                collisions.Add(hintName, new DiagnosticInfo(Diagnostics.HintNameCollision, (Location?)null, property.TypeName, first.TypeName));
+            }
+        }
+
+        return collisions;
+    }
+
+    private static string GetHintName(string ns, string typeKey) =>
+        HintNameBuilder.Build(ns, typeKey);
 
     private static void Execute(SourceProductionContext context, TypeModel model)
     {
@@ -275,7 +327,7 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         BuildSource(builder, model.Properties.ToList());
 #pragma warning restore IDE0028
 
-        context.AddSource(HintNameBuilder.Build(model.Namespace, model.TypeKey), builder);
+        context.AddSource(GetHintName(model.Namespace, model.TypeKey), builder);
     }
 
     private static void BuildSource(SourceBuilder builder, List<PropertyModel> properties)
@@ -284,23 +336,19 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
         var containingTypes = properties[0].ContainingTypes;
         var isSealed = properties[0].IsSealed;
         var isReactive = properties[0].IsReactive;
-        var isViewModel = properties[0].IsViewModel;
+        var isViewModel = properties[0].IsViewModel && properties[0].IsViewModelBase;
 
         builder.AutoGenerated();
         builder.EnableNullable();
         builder.Disable("CS8618");
+        builder.Disable("CS9264");
+        builder.Disable("CS0612, CS0618");
         builder.NewLine();
 
         // namespace
         if (!String.IsNullOrEmpty(ns))
         {
             builder.Namespace(ns);
-            builder.NewLine();
-        }
-
-        if (isReactive)
-        {
-            builder.Append("using System.Reactive.Linq;").NewLine();
             builder.NewLine();
         }
 
@@ -346,35 +394,24 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
             // property
             builder
                 .Indent()
-                .Append(property.PropertyAccessibility.ToText())
-                .Append(" partial ")
-                .Append(property.PropertyType)
-                .Append(' ')
-                .Append(property.PropertyName)
+                .Append(property.Signature)
                 .NewLine();
             builder.BeginScope();
 
             // getter
-            if (property.HasGetter)
+            if (property.Getter is not null)
             {
-                builder.Indent();
-                if (property.GetterAccessibility is not null)
-                {
-                    builder.Append(property.GetterAccessibility.Value.ToText()).Append(" ");
-                }
                 builder
-                    .Append("get => field;")
+                    .Indent()
+                    .Append(property.Getter)
+                    .Append(" => field;")
                     .NewLine();
             }
 
             // setter
-            builder.Indent();
-            if (property.SetterAccessibility is not null)
-            {
-                builder.Append(property.SetterAccessibility.Value.ToText()).Append(" ");
-            }
             builder
-                .Append("set")
+                .Indent()
+                .Append(property.Setter)
                 .NewLine();
             builder.BeginScope();
             builder
@@ -425,9 +462,19 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
                 builder
                     .Indent()
-                    .Append("return global::System.Reactive.Linq.Observable.FromEvent<global::System.ComponentModel.PropertyChangedEventHandler, global::System.ComponentModel.PropertyChangedEventArgs>(")
+                    .Append("return global::System.Reactive.Linq.Observable.Select(")
                     .NewLine();
-                builder.IndentLevel += 2;
+                builder.IndentLevel++;
+                builder
+                    .Indent()
+                    .Append("global::System.Reactive.Linq.Observable.Where(")
+                    .NewLine();
+                builder.IndentLevel++;
+                builder
+                    .Indent()
+                    .Append("global::System.Reactive.Linq.Observable.FromEvent<global::System.ComponentModel.PropertyChangedEventHandler, global::System.ComponentModel.PropertyChangedEventArgs>(")
+                    .NewLine();
+                builder.IndentLevel++;
                 builder
                     .Indent()
                     .Append("static h => (_, e) => h(e),")
@@ -438,19 +485,20 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
                     .NewLine();
                 builder
                     .Indent()
-                    .Append("h => PropertyChanged -= h)")
+                    .Append("h => PropertyChanged -= h),")
                     .NewLine();
                 builder.IndentLevel--;
                 builder
                     .Indent()
-                    .Append(".Where(static x => x.PropertyName == nameof(")
-                    .Append(property.PropertyName)
-                    .Append("))")
+                    .Append("static x => x.PropertyName == ")
+                    .Append(SymbolDisplay.FormatLiteral(property.PropertyName, true))
+                    .Append("),")
                     .NewLine();
+                builder.IndentLevel--;
                 builder
                     .Indent()
-                    .Append(".Select(_ => ")
-                    .Append(property.PropertyName)
+                    .Append("_ => ")
+                    .Append(CSharpIdentifier.Escape(property.PropertyName))
                     .Append(");")
                     .NewLine();
                 builder.IndentLevel--;
@@ -480,9 +528,9 @@ public sealed class ObservablePropertyGenerator : IIncrementalGenerator
 
                 builder
                     .Indent()
-                    .Append("Disposables.Add(Observe")
+                    .Append("Disposables.Add(global::System.ObservableExtensions.Subscribe(Observe")
                     .Append(property.PropertyName)
-                    .Append("().Subscribe(action));")
+                    .Append("(), action));")
                     .NewLine();
 
                 builder.EndScope();

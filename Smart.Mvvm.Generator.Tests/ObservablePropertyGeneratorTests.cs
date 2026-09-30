@@ -306,7 +306,7 @@ public class ObservablePropertyGeneratorTests
     }
 
     [Fact]
-    public void ReactiveOptionAddsSystemReactiveLinqUsing()
+    public void ReactiveOptionCallsReactiveExtensionsStatically()
     {
         const string source =
             """
@@ -322,7 +322,8 @@ public class ObservablePropertyGeneratorTests
 
         var generated = GeneratorTestHelper.GetGeneratedSource(source);
 
-        Assert.Contains("using System.Reactive.Linq;", generated, StringComparison.Ordinal);
+        Assert.Contains("global::System.Reactive.Linq.Observable.Where(", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("using ", generated, StringComparison.Ordinal);
     }
 
     [Fact]

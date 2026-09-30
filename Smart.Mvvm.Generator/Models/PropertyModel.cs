@@ -1,7 +1,5 @@
 namespace Smart.Mvvm.Generator.Models;
 
-using Microsoft.CodeAnalysis;
-
 using SourceGenerateHelper;
 
 internal sealed record PropertyModel(
@@ -13,12 +11,16 @@ internal sealed record PropertyModel(
     // Options
     bool IsReactive,
     bool IsViewModel,
+    bool IsViewModelBase,
+    string OptionOwner,
+    LocationInfo? OptionLocation,
+    string TypeName,
+    LocationInfo? TypeLocation,
     // Property signature
-    Accessibility PropertyAccessibility,
+    string Signature,
     string PropertyType,
     string PropertyName,
-    bool HasGetter,
-    Accessibility? GetterAccessibility,
-    Accessibility? SetterAccessibility,
+    string? Getter,
+    string Setter,
     // Notification targets
     EquatableArray<string> NotifyAlso);
