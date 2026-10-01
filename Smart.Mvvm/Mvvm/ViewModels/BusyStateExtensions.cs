@@ -1,5 +1,7 @@
 namespace Smart.Mvvm.ViewModels;
 
+using System.ComponentModel;
+
 public static class BusyStateExtensions
 {
     public static void Using(this IBusyState state, Action execute)
@@ -33,6 +35,14 @@ public static class BusyStateExtensions
             return await execute().ConfigureAwait(true);
         }
     }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete("Use UsingAsync for asynchronous processing.", true)]
+    public static Task Using(this IBusyState state, Func<Task> execute) => state.UsingAsync(execute);
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete("Use UsingAsync for asynchronous processing.", true)]
+    public static Task<TResult> Using<TResult>(this IBusyState state, Func<Task<TResult>> execute) => state.UsingAsync(execute);
 
     public static IDisposable Begin(this IBusyState state) => new BusyStateScope(state);
 
