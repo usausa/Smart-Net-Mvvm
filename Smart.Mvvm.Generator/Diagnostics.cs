@@ -42,20 +42,20 @@ internal static class Diagnostics
         isEnabledByDefault: true,
         customTags: DiagnosticTags.NotSuppressible);
 
-    public static DiagnosticDescriptor ViewModelOptionRequiresReactive { get; } = new(
-        id: "SMV0005",
-        title: "ViewModel option has no effect",
-        messageFormat: "ViewModel option has no effect without the Reactive option, or on a type that does not derive from ViewModelBase. type=[{0}]",
-        category: "Usage",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public static DiagnosticDescriptor HintNameCollision { get; } = new(
-        id: "SMV0006",
+        id: "SMV0005",
         title: "Type name differs only in case",
         messageFormat: "Type name differs only in case from another type, and its source is not generated. type=[{0}], other=[{1}]",
         category: "Usage",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
         customTags: DiagnosticTags.NotSuppressible);
+
+    public static DiagnosticDescriptor ViewModelOptionRequiresReactive { get; } = new(
+        id: "SMV0006",
+        title: "ViewModel option has no effect",
+        messageFormat: "ViewModel option has no effect without the Reactive option, or on a type that does not derive from ViewModelBase. type=[{0}]",
+        category: "Usage",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 }

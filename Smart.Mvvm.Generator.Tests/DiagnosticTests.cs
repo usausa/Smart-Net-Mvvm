@@ -22,6 +22,25 @@ public sealed class DiagnosticTests
     }
 
     [Fact]
+    public void Smv0001IndexerEmitsDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public sealed partial class Model : ObservableObject
+            {
+                [ObservableProperty]
+                public partial string this[int index] { get; set; }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "SMV0001");
+    }
+
+    [Fact]
     public void Smv0002PropertyWithoutSetterEmitsDiagnostic()
     {
         const string source =
@@ -104,7 +123,52 @@ public sealed class DiagnosticTests
     }
 
     [Fact]
-    public void Smv0005ViewModelOptionWithoutReactiveEmitsDiagnostic()
+    public void Smv0004FileLocalTypeEmitsDiagnostic()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            file sealed partial class Model : ObservableObject
+            {
+                [ObservableProperty]
+                public partial string Title { get; set; }
+            }
+            """;
+
+        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "SMV0004");
+    }
+
+    [Fact]
+    public void Smv0005CaseOnlyTypeNamesGenerateTheFirstOnly()
+    {
+        const string source =
+            """
+            using Smart.Mvvm;
+
+            public sealed partial class Model : ObservableObject
+            {
+                [ObservableProperty]
+                public partial string Title { get; set; }
+            }
+
+            public sealed partial class model : ObservableObject
+            {
+                [ObservableProperty]
+                public partial string Title { get; set; }
+            }
+            """;
+
+        var problems = GeneratorTestHelper.GetProblemIds(source);
+
+        Assert.Contains("SMV0005", problems);
+        Assert.DoesNotContain("CS8785", problems);
+    }
+
+    [Fact]
+    public void Smv0006ViewModelOptionWithoutReactiveEmitsDiagnostic()
     {
         const string source =
             """
@@ -121,11 +185,11 @@ public sealed class DiagnosticTests
 
         var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
 
-        Assert.Contains(diagnostics, d => d.Id == "SMV0005");
+        Assert.Contains(diagnostics, d => d.Id == "SMV0006");
     }
 
     [Fact]
-    public void Smv0005ViewModelOptionWithReactiveEmitsNoDiagnostic()
+    public void Smv0006ViewModelOptionWithReactiveEmitsNoDiagnostic()
     {
         const string source =
             """
@@ -142,11 +206,11 @@ public sealed class DiagnosticTests
 
         var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
 
-        Assert.DoesNotContain(diagnostics, d => d.Id == "SMV0005");
+        Assert.DoesNotContain(diagnostics, d => d.Id == "SMV0006");
     }
 
     [Fact]
-    public void Smv0005ViewModelOptionWithoutViewModelBaseEmitsDiagnostic()
+    public void Smv0006ViewModelOptionWithoutViewModelBaseEmitsDiagnostic()
     {
         const string source =
             """
@@ -162,12 +226,12 @@ public sealed class DiagnosticTests
 
         var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
 
-        Assert.Contains(diagnostics, d => d.Id == "SMV0005");
+        Assert.Contains(diagnostics, d => d.Id == "SMV0006");
         Assert.DoesNotContain("SubscribeTitle", GeneratorTestHelper.GetAllGeneratedSource(source), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Smv0005InheritedOptionIsReportedOnceAtTheAttribute()
+    public void Smv0006InheritedOptionIsReportedOnceAtTheAttribute()
     {
         const string source =
             """
@@ -194,72 +258,8 @@ public sealed class DiagnosticTests
 
         var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
 
-        var diagnostic = Assert.Single(diagnostics, static d => d.Id == "SMV0005");
+        var diagnostic = Assert.Single(diagnostics, static d => d.Id == "SMV0006");
         Assert.Equal(3, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
-    }
-
-    [Fact]
-    public void Smv0001IndexerEmitsDiagnostic()
-    {
-        const string source =
-            """
-            using Smart.Mvvm;
-
-            public sealed partial class Model : ObservableObject
-            {
-                [ObservableProperty]
-                public partial string this[int index] { get; set; }
-            }
-            """;
-
-        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
-
-        Assert.Contains(diagnostics, d => d.Id == "SMV0001");
-    }
-
-    [Fact]
-    public void Smv0004FileLocalTypeEmitsDiagnostic()
-    {
-        const string source =
-            """
-            using Smart.Mvvm;
-
-            file sealed partial class Model : ObservableObject
-            {
-                [ObservableProperty]
-                public partial string Title { get; set; }
-            }
-            """;
-
-        var diagnostics = GeneratorTestHelper.GetDiagnostics(source);
-
-        Assert.Contains(diagnostics, d => d.Id == "SMV0004");
-    }
-
-    [Fact]
-    public void Smv0006CaseOnlyTypeNamesGenerateTheFirstOnly()
-    {
-        const string source =
-            """
-            using Smart.Mvvm;
-
-            public sealed partial class Model : ObservableObject
-            {
-                [ObservableProperty]
-                public partial string Title { get; set; }
-            }
-
-            public sealed partial class model : ObservableObject
-            {
-                [ObservableProperty]
-                public partial string Title { get; set; }
-            }
-            """;
-
-        var problems = GeneratorTestHelper.GetProblemIds(source);
-
-        Assert.Contains("SMV0006", problems);
-        Assert.DoesNotContain("CS8785", problems);
     }
 
     [Fact]
