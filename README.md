@@ -8,4 +8,5 @@
 * `[ObservableProperty]` source generator attribute for boilerplate-free property declarations
 * Messaging system (`IMessenger`, `Messenger`) with event, cancel, and resolve request types
 * `ViewModelBase` with `BusyState`, `Disposables`, and `ErrorInfo` helpers
+* `ObservableView<T>` read-only filtered and sorted view over a collection, with incremental change notifications
 * Resolver (DI container) provider integration via `ResolveProvider`
