@@ -253,6 +253,42 @@ public sealed class ObservableViewTests
         Assert.Equal(view, replica.Items);
     }
 
+    [Fact]
+    public void KeepsDuplicateValuesWhenInserting()
+    {
+        // Arrange
+        var source = new ObservableCollection<int> { 5, 5 };
+        using var view = new ObservableView<int>(source);
+        var replica = new Replica<int>(view);
+
+        // Act
+        source.Insert(0, 1);
+
+        // Assert
+        Assert.Equal([NotifyCollectionChangedAction.Add], replica.Actions);
+        Assert.Equal([1, 5, 5], view);
+    }
+
+    [Fact]
+    public void RefreshWithoutChangesRaisesNothing()
+    {
+        // Arrange
+        var source = Source(3, 1, 2);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        var replica = new Replica<Item>(view);
+        var properties = new List<string?>();
+        view.PropertyChanged += (_, e) => properties.Add(e.PropertyName);
+
+        // Act
+        view.Refresh();
+
+        // Assert
+        Assert.Empty(replica.Actions);
+        Assert.Empty(properties);
+        Assert.Equal([1, 2, 3], view.Select(static x => x.Value));
+    }
+
     //------------------------------------------------------------
     // ObserveProperty
     //------------------------------------------------------------
@@ -295,6 +331,24 @@ public sealed class ObservableViewTests
     }
 
     [Fact]
+    public void RaisesNothingWhenObservedChangeKeepsOrder()
+    {
+        // Arrange
+        var source = Source(1, 5, 9);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var replica = new Replica<Item>(view);
+
+        // Act
+        source[1].Value = 6;
+
+        // Assert
+        Assert.Empty(replica.Actions);
+        Assert.Equal([1, 6, 9], view.Select(static x => x.Value));
+    }
+
+    [Fact]
     public void ObservesItemsAddedLater()
     {
         // Arrange
@@ -331,6 +385,138 @@ public sealed class ObservableViewTests
 
         // Assert
         Assert.Empty(replica.Actions);
+    }
+
+    [Fact]
+    public void KeepsObservingDuplicateUntilLastRemoved()
+    {
+        // Arrange
+        var item = new Item(3);
+        var source = new ObservableCollection<Item> { new(1), item, new(2), item };
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        source.RemoveAt(3);
+        var replica = new Replica<Item>(view);
+
+        // Act
+        item.Value = 0;
+
+        // Assert
+        Assert.Equal([0, 1, 2], view.Select(static x => x.Value));
+        Assert.Equal(view, replica.Items);
+    }
+
+    [Fact]
+    public void StopsObservingDuplicateWhenLastRemoved()
+    {
+        // Arrange
+        var item = new Item(3);
+        var source = new ObservableCollection<Item> { new(1), item, item };
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+
+        // Act
+        source.Remove(item);
+        source.Remove(item);
+
+        // Assert
+        Assert.False(item.HasSubscribers);
+    }
+
+    [Fact]
+    public void ObservesReplacingItem()
+    {
+        // Arrange
+        var source = Source(1, 2);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var item = new Item(3);
+        source[0] = item;
+        var replica = new Replica<Item>(view);
+
+        // Act
+        item.Value = 0;
+
+        // Assert
+        Assert.Equal([0, 2], view.Select(static x => x.Value));
+        Assert.Equal(view, replica.Items);
+    }
+
+    [Fact]
+    public void StopsObservingReplacedItem()
+    {
+        // Arrange
+        var source = Source(1, 2);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var item = source[0];
+
+        // Act
+        source[0] = new Item(3);
+
+        // Assert
+        Assert.False(item.HasSubscribers);
+    }
+
+    [Fact]
+    public void KeepsObservingItemReplacedWithItself()
+    {
+        // Arrange
+        var source = Source(1, 2);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var item = source[1];
+        source[1] = item;
+        var replica = new Replica<Item>(view);
+
+        // Act
+        item.Value = 0;
+
+        // Assert
+        Assert.Equal([0, 1], view.Select(static x => x.Value));
+        Assert.Equal(view, replica.Items);
+    }
+
+    [Fact]
+    public void ObservesItemsAfterReset()
+    {
+        // Arrange
+        var source = new ResetCollection<Item>([new Item(1), new Item(2)]);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var item = new Item(5);
+        source.ResetTo([new Item(4), item]);
+        var replica = new Replica<Item>(view);
+
+        // Act
+        item.Value = 0;
+
+        // Assert
+        Assert.Equal([0, 4], view.Select(static x => x.Value));
+        Assert.Equal(view, replica.Items);
+    }
+
+    [Fact]
+    public void StopsObservingItemsRemovedByReset()
+    {
+        // Arrange
+        var source = new ResetCollection<Item>([new Item(1), new Item(2)]);
+        using var view = new ObservableView<Item>(source);
+        view.Comparer = Ascending;
+        view.ObserveProperty(nameof(Item.Value));
+        var item = source[0];
+
+        // Act
+        source.ResetTo([new Item(4)]);
+
+        // Assert
+        Assert.False(item.HasSubscribers);
     }
 
     //------------------------------------------------------------
@@ -555,6 +741,27 @@ public sealed class ObservableViewTests
                 field = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
             }
+        }
+
+        public bool HasSubscribers => PropertyChanged is not null;
+    }
+
+    private sealed class ResetCollection<T> : ObservableCollection<T>
+    {
+        public ResetCollection(IEnumerable<T> items)
+            : base(items)
+        {
+        }
+
+        public void ResetTo(IEnumerable<T> items)
+        {
+            Items.Clear();
+            foreach (var item in items)
+            {
+                Items.Add(item);
+            }
+
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
 

@@ -13,8 +13,14 @@ public sealed class CancelRequest : IEventRequest<CancelEventArgs>
 
     public bool IsCancel()
     {
+        var handler = Requested;
+        if (handler is null)
+        {
+            return false;
+        }
+
         var args = new CancelEventArgs();
-        Requested?.Invoke(this, args);
+        handler(this, args);
         return args.Cancel;
     }
 }

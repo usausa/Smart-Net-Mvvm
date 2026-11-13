@@ -44,21 +44,20 @@ public static class BusyStateExtensions
     [Obsolete("Use UsingAsync for asynchronous processing.", true)]
     public static Task<TResult> Using<TResult>(this IBusyState state, Func<Task<TResult>> execute) => state.UsingAsync(execute);
 
-    public static IDisposable Begin(this IBusyState state) => new BusyStateScope(state);
-
-    private readonly struct BusyStateScope : IDisposable
-    {
-        private readonly IBusyState state;
-
-        public BusyStateScope(IBusyState state)
-        {
-            state.Require();
-            this.state = state;
-        }
-
-        public void Dispose()
-        {
-            state.Release();
-        }
-    }
+    public static BusyStateScope Begin(this IBusyState state) => new(state);
 }
+
+#pragma warning disable CA1815
+public readonly struct BusyStateScope : IDisposable
+{
+    private readonly IBusyState state;
+
+    internal BusyStateScope(IBusyState state)
+    {
+        state.Require();
+        this.state = state;
+    }
+
+    public void Dispose() => state?.Release();
+}
+#pragma warning restore CA1815

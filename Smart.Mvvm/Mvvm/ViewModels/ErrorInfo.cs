@@ -117,14 +117,6 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
         return values;
     }
 
-    private void RemoveList(string key)
-    {
-        if ((errors is not null) && errors.Remove(key, out var values))
-        {
-            values.Dispose();
-        }
-    }
-
     public void AddError(string key, string message)
     {
         var values = PrepareList(key);
@@ -188,7 +180,8 @@ public sealed class ErrorInfo : ObservableObject, IDisposable
 
         if (values is null)
         {
-            RemoveList(key);
+            ClearErrors(key);
+            return;
         }
 
         RaisePropertyChanged(ItemsChangedEventArgs);

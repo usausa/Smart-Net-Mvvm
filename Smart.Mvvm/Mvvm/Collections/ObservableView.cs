@@ -3,6 +3,8 @@ namespace Smart.Mvvm.Collections;
 using System.Collections;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using Smart.Mvvm.Internal;
 
@@ -15,7 +17,9 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
 
     private readonly HashSet<string> observedProperties = [];
 
-    private HashSet<INotifyPropertyChanged> subscribedItems = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<INotifyPropertyChanged, int> subscribedItems = new(ReferenceEqualityComparer.Instance);
+
+    private readonly PropertyChangedEventHandler itemHandler;
 
     private List<T> view;
 
@@ -28,6 +32,7 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
     public ObservableView(IReadOnlyList<T> source)
     {
         this.source = source;
+        itemHandler = OnItemPropertyChanged;
         itemComparer = typeof(T).IsValueType ? EqualityComparer<T>.Default : (IEqualityComparer<T>)(object)ReferenceEqualityComparer.Instance;
         view = Build();
 
@@ -86,9 +91,9 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
             notify.CollectionChanged -= OnSourceCollectionChanged;
         }
 
-        foreach (var item in subscribedItems)
+        foreach (var item in subscribedItems.Keys)
         {
-            item.PropertyChanged -= OnItemPropertyChanged;
+            item.PropertyChanged -= itemHandler;
         }
 
         subscribedItems.Clear();
@@ -118,7 +123,7 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
     {
         if (observedProperties.Add(propertyName) && (observedProperties.Count == 1))
         {
-            SyncSubscriptions();
+            ResetSubscriptions();
         }
     }
 
@@ -136,7 +141,7 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
     public IDisposable DeferRefresh()
     {
         deferCount++;
-        return new DeferScope(EndDefer);
+        return new DeferScope(this);
     }
 
     private void EndDefer()
@@ -164,7 +169,7 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
     {
         if (observedProperties.Count > 0)
         {
-            SyncSubscriptions();
+            UpdateSubscriptions(e);
         }
 
         if (e.Action != NotifyCollectionChangedAction.Reset)
@@ -189,34 +194,89 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
         }
     }
 
-    private void SyncSubscriptions()
+    private void UpdateSubscriptions(NotifyCollectionChangedEventArgs e)
     {
-        var items = new HashSet<INotifyPropertyChanged>(ReferenceEqualityComparer.Instance);
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add when e.NewItems is not null:
+                Subscribe(e.NewItems);
+                break;
+            case NotifyCollectionChangedAction.Remove when e.OldItems is not null:
+                Unsubscribe(e.OldItems);
+                break;
+            case NotifyCollectionChangedAction.Replace when (e.NewItems is not null) && (e.OldItems is not null):
+                Subscribe(e.NewItems);
+                Unsubscribe(e.OldItems);
+                break;
+            case NotifyCollectionChangedAction.Move:
+                break;
+            default:
+                ResetSubscriptions();
+                break;
+        }
+    }
+
+    private void Subscribe(IList items)
+    {
+        foreach (var item in items)
+        {
+            if (item is INotifyPropertyChanged notify)
+            {
+                Subscribe(notify);
+            }
+        }
+    }
+
+    private void Subscribe(INotifyPropertyChanged item)
+    {
+        ref var count = ref CollectionsMarshal.GetValueRefOrAddDefault(subscribedItems, item, out _);
+        if (count == 0)
+        {
+            item.PropertyChanged += itemHandler;
+        }
+
+        count++;
+    }
+
+    private void Unsubscribe(IList items)
+    {
+        foreach (var item in items)
+        {
+            if (item is not INotifyPropertyChanged notify)
+            {
+                continue;
+            }
+
+            ref var count = ref CollectionsMarshal.GetValueRefOrNullRef(subscribedItems, notify);
+            if (Unsafe.IsNullRef(ref count))
+            {
+                continue;
+            }
+
+            count--;
+            if (count == 0)
+            {
+                subscribedItems.Remove(notify);
+                notify.PropertyChanged -= itemHandler;
+            }
+        }
+    }
+
+    private void ResetSubscriptions()
+    {
+        foreach (var item in subscribedItems.Keys)
+        {
+            item.PropertyChanged -= itemHandler;
+        }
+
+        subscribedItems.Clear();
         foreach (var item in source)
         {
             if (item is INotifyPropertyChanged notify)
             {
-                items.Add(notify);
+                Subscribe(notify);
             }
         }
-
-        foreach (var item in subscribedItems)
-        {
-            if (!items.Contains(item))
-            {
-                item.PropertyChanged -= OnItemPropertyChanged;
-            }
-        }
-
-        foreach (var item in items)
-        {
-            if (!subscribedItems.Contains(item))
-            {
-                item.PropertyChanged += OnItemPropertyChanged;
-            }
-        }
-
-        subscribedItems = items;
     }
 
     private List<T> Build()
@@ -266,32 +326,39 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
             return;
         }
 
+        if (IsSameAsView(desired))
+        {
+            return;
+        }
+
         var next = new int[desired.Count];
-        var first = new Dictionary<T, int>(itemComparer);
+        var first = new Dictionary<T, int>(desired.Count, itemComparer);
         for (var i = desired.Count - 1; i >= 0; i--)
         {
-            next[i] = first.GetValueOrDefault(desired[i], -1);
-            first[desired[i]] = i;
+            ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(first, desired[i], out var found);
+            next[i] = found ? slot : -1;
+            slot = i;
         }
 
         var targets = new List<int>(view.Count);
         foreach (var item in view)
         {
-            if (first.TryGetValue(item, out var index))
+            ref var slot = ref CollectionsMarshal.GetValueRefOrNullRef(first, item);
+            if (Unsafe.IsNullRef(ref slot))
             {
-                targets.Add(index);
-                if (next[index] >= 0)
-                {
-                    first[item] = next[index];
-                }
-                else
-                {
-                    first.Remove(item);
-                }
+                targets.Add(-1);
+                continue;
+            }
+
+            var index = slot;
+            targets.Add(index);
+            if (next[index] >= 0)
+            {
+                slot = next[index];
             }
             else
             {
-                targets.Add(-1);
+                first.Remove(item);
             }
         }
 
@@ -339,6 +406,24 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
 
             anchor = i;
         }
+    }
+
+    private bool IsSameAsView(List<T> desired)
+    {
+        if (desired.Count != view.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < desired.Count; i++)
+        {
+            if (!itemComparer.Equals(desired[i], view[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool[] FindLongestIncreasing(List<int> values)
@@ -424,15 +509,20 @@ public sealed class ObservableView<T> : IReadOnlyList<T>, IList, INotifyCollecti
         CollectionChanged?.Invoke(this, CollectionEventArgs.Reset);
     }
 
-    private sealed class DeferScope(Action end) : IDisposable
+    private sealed class DeferScope : IDisposable
     {
-        private Action? callback = end;
+        private ObservableView<T>? owner;
+
+        public DeferScope(ObservableView<T> owner)
+        {
+            this.owner = owner;
+        }
 
         public void Dispose()
         {
-            var action = callback;
-            callback = null;
-            action?.Invoke();
+            var target = owner;
+            owner = null;
+            target?.EndDefer();
         }
     }
 }

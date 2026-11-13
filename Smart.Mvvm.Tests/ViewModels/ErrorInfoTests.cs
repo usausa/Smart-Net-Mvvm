@@ -123,6 +123,37 @@ public class ErrorInfoTests
         Assert.True(info.Contains("Age"));
     }
 
+    [Fact]
+    public void UpdateErrorsEmptySequenceWithoutKeyErrorsDoesNotNotify()
+    {
+        using var info = new ErrorInfo();
+        var changed = new List<string?>();
+        info.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        info.UpdateErrors("Name", []);
+        Assert.Empty(changed);
+
+        info.AddError("Age", "err");
+        changed.Clear();
+        info.UpdateErrors("Name", []);
+
+        Assert.Empty(changed);
+        Assert.True(info.HasError);
+    }
+
+    [Fact]
+    public void UpdateErrorsEmptySequenceWithKeyErrorsNotifies()
+    {
+        using var info = new ErrorInfo();
+        info.AddError("Name", "err");
+        var changed = new List<string?>();
+        info.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        info.UpdateErrors("Name", []);
+
+        Assert.Equal(["Item[]", nameof(ErrorInfo.HasError)], changed);
+    }
+
     //------------------------------------------------------------
     // ClearErrors
     //------------------------------------------------------------

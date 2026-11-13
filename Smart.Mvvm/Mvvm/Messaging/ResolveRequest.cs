@@ -13,8 +13,14 @@ public sealed class ResolveRequest<T> : IEventRequest<ResolveEventArgs>
 
     public T Resolve()
     {
+        var handler = Requested;
+        if (handler is null)
+        {
+            return default!;
+        }
+
         var args = new ResolveEventArgs();
-        Requested?.Invoke(this, args);
-        return (T)args.Result!;
+        handler(this, args);
+        return args.Result is null ? default! : (T)args.Result;
     }
 }
